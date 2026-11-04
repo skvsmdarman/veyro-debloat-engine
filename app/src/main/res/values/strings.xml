@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Veyro Debloat Engine</string>
+    <string name="shizuku_notification_channel">Engine Status</string>
+    <string name="update_notification_channel">Update Alerts</string>
+    <string name="update_notification_title">Veyro Engine Update Available</string>
+    <string name="update_notification_desc">Shows alerts when a new Veyro Debloat Engine release is available.</string>
+</resources>

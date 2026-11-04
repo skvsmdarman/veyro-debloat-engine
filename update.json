@@ -1,0 +1,7 @@
+{
+  "versionCode": 1,
+  "versionName": "1.0.0",
+  "releaseNotes": "• Initial public release\n• Freeze / Disable / Uninstall debloat strategies with full restore engine\n• Eco · Performance · Gaming modes with Game Focus overdrive\n• OS-wide AdBlock DNS, Display Smoother, Wake-Lock cutter\n• Tools Lab: AOT compiler, battery analyzer, RAM expansion auditor, sensor kill-switch, log flush, overlay purger\n• GitHub auto-updater built in",
+  "downloadUrl": "https://github.com/skvsmdarman/veyro-debloat-engine/releases/download/v1.0.0/veyro-debloat-engine.apk",
+  "mandatory": false
+}

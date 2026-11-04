@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Android 12+ splash: VOID-ONLY. No icon flash — the branded Veyro
+         Lottie preloader takes over the moment the process starts. -->
+    <style name="Theme.Veyro" parent="android:Theme.Material.NoActionBar">
+        <item name="android:windowBackground">@color/veyro_black</item>
+        <item name="android:statusBarColor">@color/veyro_black</item>
+        <item name="android:navigationBarColor">@color/veyro_black</item>
+        <item name="android:windowLightStatusBar">false</item>
+        <item name="android:windowSplashScreenBackground">@color/veyro_black</item>
+        <item name="android:windowSplashScreenAnimatedIcon">@drawable/splash_transparent</item>
+    </style>
+</resources>

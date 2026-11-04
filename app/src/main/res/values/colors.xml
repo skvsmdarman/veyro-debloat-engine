@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="veyro_black">#FF0B0514</color>
+    <color name="veyro_deep_purple">#FF1A0B2E</color>
+    <color name="veyro_purple">#FF8B5CF6</color>
+    <color name="veyro_purple_bright">#FFA78BFA</color>
+    <color name="veyro_white">#FFF4F1FF</color>
+    <color name="ic_launcher_background">#FF0B0514</color>
+</resources>

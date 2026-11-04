@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Pure framework theme: no AppCompat/Material Components needed (smaller APK).
+         The real Material 3 look is applied by Compose. -->
+    <style name="Theme.Veyro" parent="android:Theme.Material.NoActionBar">
+        <item name="android:windowBackground">@color/veyro_black</item>
+        <item name="android:statusBarColor">@color/veyro_black</item>
+        <item name="android:navigationBarColor">@color/veyro_black</item>
+        <item name="android:windowLightStatusBar">false</item>
+    </style>
+</resources>

@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Small monochrome status-bar icon for update notifications. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="24"
+    android:viewportHeight="24">
+    <path
+        android:fillColor="#FFFFFFFF"
+        android:pathData="M12,2 L20,5 L20,11 C20,16.5 16.7,20.6 12,22 C7.3,20.6 4,16.5 4,11 L4,5 Z M8.2,7 L10.4,7 L12,12.1 L13.6,7 L15.8,7 L13.2,16 L10.8,16 Z" />
+</vector>

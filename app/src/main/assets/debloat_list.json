@@ -1,0 +1,314 @@
+[
+  {
+    "packageName": "com.facebook.katana",
+    "appName": "Facebook Main App",
+    "tier": "SAFE",
+    "tags": ["Bloatware", "Telemetry"],
+    "description": "Pre-installed social network app.",
+    "warning": "Uninstalling removes Facebook social app."
+  },
+  {
+    "packageName": "com.facebook.system",
+    "appName": "Facebook System Service",
+    "tier": "SAFE",
+    "tags": ["Telemetry", "Bloatware"],
+    "description": "Background service for updating Facebook services.",
+    "warning": "Safe to remove; prevents background data collection."
+  },
+  {
+    "packageName": "com.facebook.appmanager",
+    "appName": "Facebook App Manager",
+    "tier": "SAFE",
+    "tags": ["Telemetry", "Bloatware"],
+    "description": "Installer stub for Meta apps.",
+    "warning": "Safe to remove."
+  },
+  {
+    "packageName": "com.facebook.services",
+    "appName": "Facebook Services",
+    "tier": "SAFE",
+    "tags": ["Telemetry", "Bloatware"],
+    "description": "Background analytics & location tracker for Meta.",
+    "warning": "Safe to remove."
+  },
+  {
+    "packageName": "com.miui.analytics",
+    "appName": "Xiaomi Analytics",
+    "tier": "SAFE",
+    "tags": ["Telemetry", "Ads"],
+    "description": "Xiaomi MIUI analytics and usage data collection.",
+    "warning": "Safe to remove; stops telemetry sending."
+  },
+  {
+    "packageName": "com.miui.msa.global",
+    "appName": "MIUI System Ads",
+    "tier": "SAFE",
+    "tags": ["Ads"],
+    "description": "Main advertising service delivering ads in MIUI apps.",
+    "warning": "Safe to remove; eliminates ads in system apps."
+  },
+  {
+    "packageName": "com.miui.bugreport",
+    "appName": "MIUI Bug Report",
+    "tier": "SAFE",
+    "tags": ["Telemetry"],
+    "description": "Sends diagnostics and crash reports to Xiaomi servers.",
+    "warning": "Safe to remove."
+  },
+  {
+    "packageName": "com.miui.hybrid",
+    "appName": "Quick Apps Service",
+    "tier": "SAFE",
+    "tags": ["Ads", "Bloatware"],
+    "description": "Pushes mini web apps and ad popups in MIUI.",
+    "warning": "Safe to remove."
+  },
+  {
+    "packageName": "com.miui.cleanmaster",
+    "appName": "MIUI Cleaner",
+    "tier": "PROBABLY_SAFE",
+    "tags": ["Duplicate App", "Ads"],
+    "description": "Integrated CleanMaster engine with ad banners.",
+    "warning": "Cleaner shortcut in Security app will stop working."
+  },
+  {
+    "packageName": "com.miui.weather2",
+    "appName": "MIUI Weather",
+    "tier": "PROBABLY_SAFE",
+    "tags": ["Duplicate App"],
+    "description": "Stock Xiaomi weather application.",
+    "warning": "Removes stock weather widget."
+  },
+  {
+    "packageName": "com.miui.notes",
+    "appName": "MIUI Notes",
+    "tier": "PROBABLY_SAFE",
+    "tags": ["Duplicate App"],
+    "description": "Stock Xiaomi note taking app.",
+    "warning": "Unsaved local notes in Xiaomi Notes will be inaccessible."
+  },
+  {
+    "packageName": "com.miui.compass",
+    "appName": "MIUI Compass",
+    "tier": "PROBABLY_SAFE",
+    "tags": ["Duplicate App"],
+    "description": "Stock MIUI Compass tool.",
+    "warning": "Removes compass utility."
+  },
+  {
+    "packageName": "com.miui.screenrecorder",
+    "appName": "MIUI Screen Recorder",
+    "tier": "PROBABLY_SAFE",
+    "tags": ["Duplicate App"],
+    "description": "Stock screen recording tool.",
+    "warning": "Quick setting tile for screen recording will be disabled."
+  },
+  {
+    "packageName": "com.xiaomi.joyose",
+    "appName": "Xiaomi Joyose Framework",
+    "tier": "RISKY",
+    "tags": ["Telemetry"],
+    "description": "Game booster and system performance throttling service.",
+    "warning": "May cause instability, overheating, or unexpected gaming fps drops."
+  },
+  {
+    "packageName": "com.miui.powerkeeper",
+    "appName": "MIUI Powerkeeper",
+    "tier": "RISKY",
+    "tags": ["Telemetry"],
+    "description": "Aggressive battery optimization engine.",
+    "warning": "Removing may cause push notification delays or excessive battery drain."
+  },
+  {
+    "packageName": "com.samsung.android.bixby.agent",
+    "appName": "Bixby Voice Agent",
+    "tier": "SAFE",
+    "tags": ["Bloatware"],
+    "description": "Samsung Bixby voice assistant background listener.",
+    "warning": "Disables Bixby voice trigger and side key gesture."
+  },
+  {
+    "packageName": "com.samsung.android.app.routines",
+    "appName": "Bixby Routines",
+    "tier": "PROBABLY_SAFE",
+    "tags": ["Duplicate App"],
+    "description": "Automated mode and routine engine for Samsung devices.",
+    "warning": "Modes and Routines feature in settings will be disabled."
+  },
+  {
+    "packageName": "com.samsung.android.game.gamehome",
+    "appName": "Samsung Gaming Hub",
+    "tier": "SAFE",
+    "tags": ["Ads", "Bloatware"],
+    "description": "Samsung Game Launcher with ad feeds.",
+    "warning": "Safe to remove; games remain installed on app drawer."
+  },
+  {
+    "packageName": "com.samsung.android.spay",
+    "appName": "Samsung Wallet / Pay",
+    "tier": "PROBABLY_SAFE",
+    "tags": ["Duplicate App"],
+    "description": "Samsung payment and pass storage app.",
+    "warning": "Disables Samsung Pay quick swipe shortcut."
+  },
+  {
+    "packageName": "com.samsung.android.app.notes",
+    "appName": "Samsung Notes",
+    "tier": "PROBABLY_SAFE",
+    "tags": ["Duplicate App"],
+    "description": "Stock Samsung Note taking app.",
+    "warning": "S-Pen / Quick note creation disabled."
+  },
+  {
+    "packageName": "com.sec.android.app.sbrowser",
+    "appName": "Samsung Internet Browser",
+    "tier": "PROBABLY_SAFE",
+    "tags": ["Duplicate App"],
+    "description": "Stock Samsung web browser.",
+    "warning": "Default browser will fall back to Chrome or another browser."
+  },
+  {
+    "packageName": "com.google.android.youtube",
+    "appName": "YouTube",
+    "tier": "PROBABLY_SAFE",
+    "tags": ["Duplicate App"],
+    "description": "Official YouTube app.",
+    "warning": "Removes official YouTube application."
+  },
+  {
+    "packageName": "com.google.android.apps.tachyon",
+    "appName": "Google Meet / Duo",
+    "tier": "SAFE",
+    "tags": ["Bloatware"],
+    "description": "Google Meet video call stub.",
+    "warning": "Safe to remove."
+  },
+  {
+    "packageName": "com.google.android.apps.podcasts",
+    "appName": "Google Podcasts",
+    "tier": "SAFE",
+    "tags": ["Bloatware"],
+    "description": "Deprecated Google Podcasts player.",
+    "warning": "Safe to remove."
+  },
+  {
+    "packageName": "com.google.android.apps.subscriptions.red",
+    "appName": "Google One",
+    "tier": "SAFE",
+    "tags": ["Bloatware"],
+    "description": "Google cloud storage subscription manager.",
+    "warning": "Safe to remove."
+  },
+  {
+    "packageName": "com.amazon.mShop.android.shopping",
+    "appName": "Amazon Shopping",
+    "tier": "SAFE",
+    "tags": ["Carrier/Partner", "Bloatware"],
+    "description": "Pre-installed Amazon store stub.",
+    "warning": "Safe to remove."
+  },
+  {
+    "packageName": "com.netflix.partner.activation",
+    "appName": "Netflix Partner Activation",
+    "tier": "SAFE",
+    "tags": ["Carrier/Partner"],
+    "description": "Partner activation service for preloaded Netflix.",
+    "warning": "Safe to remove."
+  },
+  {
+    "packageName": "com.netflix.mediaclient",
+    "appName": "Netflix App",
+    "tier": "SAFE",
+    "tags": ["Carrier/Partner", "Bloatware"],
+    "description": "Preloaded Netflix video streaming app.",
+    "warning": "Safe to remove."
+  },
+  {
+    "packageName": "com.booking",
+    "appName": "Booking.com Stub",
+    "tier": "SAFE",
+    "tags": ["Carrier/Partner", "Bloatware"],
+    "description": "Preloaded hotel reservation partner app.",
+    "warning": "Safe to remove."
+  },
+  {
+    "packageName": "com.ss.android.ugc.trill",
+    "appName": "TikTok Preload",
+    "tier": "SAFE",
+    "tags": ["Carrier/Partner", "Bloatware"],
+    "description": "Pre-installed short video client.",
+    "warning": "Safe to remove."
+  },
+  {
+    "packageName": "com.microsoft.skydrive",
+    "appName": "Microsoft OneDrive",
+    "tier": "SAFE",
+    "tags": ["Carrier/Partner", "Bloatware"],
+    "description": "Preloaded Microsoft cloud sync.",
+    "warning": "Safe to remove."
+  },
+  {
+    "packageName": "com.microsoft.office.officehubrow",
+    "appName": "Microsoft 365 / Office",
+    "tier": "SAFE",
+    "tags": ["Carrier/Partner", "Bloatware"],
+    "description": "Pre-installed Microsoft Office bundle.",
+    "warning": "Safe to remove."
+  },
+  {
+    "packageName": "com.oppo.market",
+    "appName": "OPPO / Realme App Market",
+    "tier": "SAFE",
+    "tags": ["Ads", "Bloatware"],
+    "description": "Secondary app store pushing recommended ad apps.",
+    "warning": "Safe to remove."
+  },
+  {
+    "packageName": "com.heytap.browser",
+    "appName": "HeyTap / Realme Browser",
+    "tier": "SAFE",
+    "tags": ["Ads", "Duplicate App"],
+    "description": "Stock Oppo browser filled with push ad notifications.",
+    "warning": "Safe to remove."
+  },
+  {
+    "packageName": "com.vivo.appstore",
+    "appName": "Vivo V-Appstore",
+    "tier": "SAFE",
+    "tags": ["Ads", "Bloatware"],
+    "description": "Preloaded Vivo app store with push promotions.",
+    "warning": "Safe to remove."
+  },
+  {
+    "packageName": "com.google.android.dialer",
+    "appName": "Google Phone / Dialer",
+    "tier": "PROTECTED",
+    "tags": ["Bloatware"],
+    "description": "Essential system calling app.",
+    "warning": "CRITICAL: Removing will disable phone calls and emergency dialing!"
+  },
+  {
+    "packageName": "com.google.android.gms",
+    "appName": "Google Play Services",
+    "tier": "PROTECTED",
+    "tags": ["Telemetry"],
+    "description": "Core Android framework services.",
+    "warning": "CRITICAL: Removing will cause crash loops and break device functionality!"
+  },
+  {
+    "packageName": "com.android.vending",
+    "appName": "Google Play Store",
+    "tier": "PROTECTED",
+    "tags": ["Bloatware"],
+    "description": "Primary application store and license verifier.",
+    "warning": "CRITICAL: Cannot install or update apps if removed."
+  },
+  {
+    "packageName": "com.android.settings",
+    "appName": "Android System Settings",
+    "tier": "PROTECTED",
+    "tags": ["Bloatware"],
+    "description": "Device configuration panel.",
+    "warning": "CRITICAL: Device settings will become completely unreachable!"
+  }
+]

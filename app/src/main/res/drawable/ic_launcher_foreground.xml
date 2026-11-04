@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Veyro Debloat Engine — launcher icon (placeholder vector).
+
+  HOW TO DROP IN YOUR CUSTOM PNG / WEBP:
+  1. Export your artwork at these sizes (square; keep important art inside the
+     central 66/108 safe zone, i.e. the middle ~61% of the canvas):
+        mipmap-mdpi    108x108
+        mipmap-hdpi    162x162
+        mipmap-xhdpi   216x216
+        mipmap-xxhdpi  324x324
+        mipmap-xxxhdpi 432x432
+  2. Name them ic_launcher_foreground.webp (and ic_launcher_round.webp for a
+     round variant) and drop them into the matching res/mipmap-*dpi/ folders.
+     Bitmap drawables in mipmap-*dpi OVERRIDE this vector automatically —
+     no XML change is needed.
+  3. To swap the background, edit @color/ic_launcher_background in
+     values/colors.xml, or replace res/drawable/ic_launcher_background.xml.
+  4. Remove these mipmap-*dpi webp files again to return to vector-only.
+-->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+
+    <!-- Soft violet glow behind the crest -->
+    <path
+        android:pathData="M54,54 m-30,0 a30,30 0 1,1 60,0 a30,30 0 1,1 -60,0"
+        android:fillColor="#338B5CF6" />
+
+    <!-- 8-tooth engine gear -->
+    <path
+        android:fillColor="#B4722CE0"
+        android:pathData="M72.5,45.7 L77.7,46.3 L77.7,53.7 L72.5,54.3 A19,19 0 0 1 70.1,60.1 L73.4,64.1 L68.1,69.4 L64.1,66.1 A19,19 0 0 1 58.3,68.5 L57.8,73.7 L50.2,73.7 L49.7,68.5 A19,19 0 0 1 43.9,66.1 L39.9,69.4 L34.6,64.1 L37.9,60.1 A19,19 0 0 1 35.5,54.3 L30.3,53.7 L30.3,46.3 L35.5,45.7 A19,19 0 0 1 37.9,39.9 L34.6,35.9 L39.9,30.6 L43.9,33.9 A19,19 0 0 1 49.7,31.5 L50.3,26.3 L57.8,26.3 L58.3,31.5 A19,19 0 0 1 64.1,33.9 L68.1,30.6 L73.4,35.9 L70.1,39.9 A19,19 0 0 1 72.5,45.7 Z" />
+
+    <!-- Gear hub (void core) -->
+    <path
+        android:pathData="M54,50 m-9,0 a9,9 0 1,1 18,0 a9,9 0 1,1 -18,0"
+        android:fillColor="#FF0B0514" />
+
+    <!-- The V crest -->
+    <path
+        android:fillColor="#FFF4F1FF"
+        android:pathData="M39,35 L47.5,35 L54,53.5 L60.5,35 L69,35 L58.5,66 L49.5,66 Z" />
+    <path
+        android:fillColor="#FFA78BFA"
+        android:pathData="M39,35 L47.5,35 L54,53.5 L51.5,61 Z" />
+
+    <!-- Orbital swoosh -->
+    <path
+        android:pathData="M26,60 A32,11 -14 0 1 82,44"
+        android:strokeColor="#FFD9C8FF"
+        android:strokeWidth="2.4"
+        android:strokeLineCap="round"
+        android:fillColor="#00000000" />
+</vector>
