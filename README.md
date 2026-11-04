@@ -23,7 +23,7 @@ available, or through the system installer.
 | **Dashboard** | Spring-animated RAM/Storage gauges, flash-throttle alerts, Storage Unchoker (`pm trim-caches 1000G`), **OS-Wide AdBlock DNS** (AdGuard/Cloudflare Private DNS), **Display Smoother** (60/90/120Hz locks), System Animation Tweaker with live preview |
 | **Tools Lab** | AOT Speed Compiler, Battery Analyzer (watts/temperature/cycles), RAM Expansion auditor + adjuster, Thermal throttle detector, Sensor privacy kill-switch, Log buffer flush/shrink, RRO overlay purger |
 | **Safety** | Strict safety locks (dialer, SMS, Wi-Fi, BT, camera, keyboard, launcher, GMS, Play Store, OEM account centers can never be removed) · Shizuku-less fallbacks · guided 4-step Shizuku tutorial |
-| **Motion** | 19 bundled Lottie animations (UseAnimations + custom Nova Devs artwork), branded launch splash, animated 4-tab navigation |
+
 
 ## 🔄 Releasing a new version
 
