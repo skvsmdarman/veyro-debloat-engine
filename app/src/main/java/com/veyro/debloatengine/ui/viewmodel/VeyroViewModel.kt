@@ -77,6 +77,7 @@ data class VeyroUiState(
     val customGames: Set<String> = emptySet(),
     // Review-before-run confirmation
     val pendingBatchTargets: List<AppItem> = emptyList(),
+    val pendingBatchStrategy: DebloatStrategy = DebloatStrategy.FREEZE,
     // Update system
     val updateInfo: UpdateInfo? = null,
     val showUpdateBanner: Boolean = false,
@@ -241,16 +242,13 @@ class VeyroViewModel(application: Application) : AndroidViewModel(application) {
         _uiState.update { it.copy(strategy = strategy) }
     }
 
-    /** Explicit action chips (Freeze/Disable/Remove) — bypasses the strategy selector. */
+    /** Batch action buttons — always routed through the review dialog, never instant. */
     fun runBatchWithStrategy(context: Context, targets: List<AppItem>, strategy: DebloatStrategy) {
-        if (targets.isEmpty() || _uiState.value.batch.isRunning) return
-        _uiState.update { it.copy(strategy = strategy) }
-        runBatch(context, targets)
+        requestBatchReview(targets, strategy)
     }
 
-    fun runBatch(context: Context, targets: List<AppItem>) {
+    fun runBatch(context: Context, targets: List<AppItem>, strategy: DebloatStrategy) {
         if (targets.isEmpty() || _uiState.value.batch.isRunning) return
-        val strategy = _uiState.value.strategy
         val verb = when (strategy) {
             DebloatStrategy.FREEZE -> "FREEZED"
             DebloatStrategy.DISABLE -> "DISABLED"
@@ -911,16 +909,17 @@ class VeyroViewModel(application: Application) : AndroidViewModel(application) {
     // ------------------------------------------------------------------
     // Review-before-run flow
     // ------------------------------------------------------------------
-    fun requestBatchReview(targets: List<AppItem>) {
+    fun requestBatchReview(targets: List<AppItem>, strategy: DebloatStrategy = _uiState.value.strategy) {
         if (targets.isNotEmpty()) {
-            _uiState.update { it.copy(pendingBatchTargets = targets) }
+            _uiState.update { it.copy(pendingBatchTargets = targets, pendingBatchStrategy = strategy) }
         }
     }
 
     fun confirmPendingBatch(context: Context) {
         val targets = _uiState.value.pendingBatchTargets
-        _uiState.update { it.copy(pendingBatchTargets = emptyList()) }
-        runBatch(context, targets)
+        val strategy = _uiState.value.pendingBatchStrategy
+        _uiState.update { it.copy(pendingBatchTargets = emptyList(), strategy = strategy) }
+        runBatch(context, targets, strategy)
     }
 
     fun cancelPendingBatch() {

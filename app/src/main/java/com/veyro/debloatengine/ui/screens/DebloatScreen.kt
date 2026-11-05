@@ -44,6 +44,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.veyro.debloatengine.data.model.AppItem
@@ -483,7 +484,7 @@ private fun PackageListPane(
         }
 
         LazyColumn(
-            modifier = Modifier.fillMaxSize(),
+            modifier = Modifier.fillMaxWidth().weight(1f),
             contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 16.dp, vertical = 8.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
@@ -540,24 +541,31 @@ private fun PackageListPane(
                         onClick = { onBatchWithStrategy(targets, com.veyro.debloatengine.data.model.DebloatStrategy.FREEZE) },
                         colors = ButtonDefaults.buttonColors(containerColor = VeyroGreen),
                         modifier = Modifier.weight(1f)
-                    ) { Text("🧊 Freeze", color = Color(0xFF0B0514), maxLines = 1) }
+                    ) { Text("FREEZE", fontWeight = FontWeight.Bold, color = Color(0xFF0B0514)) }
                     Button(
                         onClick = { onBatchWithStrategy(targets, com.veyro.debloatengine.data.model.DebloatStrategy.DISABLE) },
                         colors = ButtonDefaults.buttonColors(containerColor = VeyroBlue),
                         modifier = Modifier.weight(1f)
-                    ) { Text("⏸ Disable", maxLines = 1) }
+                    ) { Text("DISABLE", fontWeight = FontWeight.Bold) }
                     Button(
                         onClick = { onBatchWithStrategy(targets, com.veyro.debloatengine.data.model.DebloatStrategy.UNINSTALL) },
                         colors = ButtonDefaults.buttonColors(containerColor = VeyroRed),
                         modifier = Modifier.weight(1f)
-                    ) { Text("🗑 Remove", maxLines = 1) }
+                    ) { Text("REMOVE", fontWeight = FontWeight.Bold) }
                 }
                 Spacer(Modifier.height(6.dp))
                 Button(
                     onClick = { onClearCache(targets) },
                     colors = ButtonDefaults.buttonColors(containerColor = PanelPurple),
                     modifier = Modifier.fillMaxWidth()
-                ) { Text("🧹 Clear Cache of Selected (${state.selectedPackages.size})") }
+                ) { Text("🧹 Clear Cache of Selected (${state.selectedPackages.size}) — safe") }
+                Spacer(Modifier.height(6.dp))
+                Text(
+                    "Every action asks you to confirm first. Freeze & cache-clean are always safe; " +
+                        "Remove uninstalls the app for you (data kept, restorable). Nothing is permanent.",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = DimText
+                )
             }
         }
     }
@@ -993,22 +1001,44 @@ private fun BatchConfirmDialog(
     onConfirm: () -> Unit,
     onCancel: () -> Unit
 ) {
+    val risky = targets.count { it.tier == com.veyro.debloatengine.data.model.Tier.RISKY || it.isSystemApp }
+    val verdict: String
+    val verdictColor: Color
+    if (strategy == com.veyro.debloatengine.data.model.DebloatStrategy.FREEZE) {
+        verdict = "SAFE - app and data stay on the phone; it just can't run. Reversible in one tap."
+        verdictColor = VeyroGreen
+    } else if (strategy == com.veyro.debloatengine.data.model.DebloatStrategy.DISABLE) {
+        verdict = "SAFE - app stays installed with all data, icon hidden. Reversible in one tap."
+        verdictColor = VeyroGreen
+    } else if (risky > 0) {
+        verdict = "CAREFUL - this UNINSTALLS the app for you. Data caches are kept and it is restorable, but re-downloading may be needed."
+        verdictColor = VeyroAmber
+    } else {
+        verdict = "MODERATE - this uninstalls the app for you (data kept, fully restorable from the Restore tab)."
+        verdictColor = VeyroAmber
+    }
+
     androidx.compose.material3.AlertDialog(
         onDismissRequest = onCancel,
         containerColor = MaterialTheme.colorScheme.surface,
         titleContentColor = VeyroWhite,
-        title = { Text("${strategy.label} ${targets.size} app${if (targets.size == 1) "" else "s"}?") },
+        title = { Text(strategy.label + " " + targets.size + " app" + (if (targets.size == 1) "" else "s") + "?") },
         text = {
             Column(Modifier.verticalScroll(rememberScrollState())) {
-                Text(
-                    strategy.detail,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = if (strategy == com.veyro.debloatengine.data.model.DebloatStrategy.FREEZE) VeyroGreen else DimText
-                )
+                Text(verdict, style = MaterialTheme.typography.bodySmall, color = verdictColor)
+                if (risky > 0) {
+                    Spacer(Modifier.height(8.dp))
+                    Text(
+                        "Warning: " + risky + " of these are system components - removing them may affect a feature " +
+                            "(Wi-Fi, camera, OEM tools...). Freeze is the safer choice for these.",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = VeyroAmber
+                    )
+                }
                 Spacer(Modifier.height(10.dp))
                 targets.take(6).forEach { t ->
                     Text(
-                        "• ${t.appName} — ${t.reason.ifBlank { t.description }}",
+                        "- " + t.appName + " - " + t.reason.ifBlank { t.description },
                         style = MaterialTheme.typography.labelSmall,
                         color = VeyroWhite,
                         maxLines = 2,
@@ -1017,11 +1047,17 @@ private fun BatchConfirmDialog(
                 }
                 if (targets.size > 6) {
                     Text(
-                        "…and ${targets.size - 6} more",
+                        "...and " + (targets.size - 6) + " more",
                         style = MaterialTheme.typography.labelSmall,
                         color = DimText
                     )
                 }
+                Spacer(Modifier.height(10.dp))
+                Text(
+                    "Everything is logged in the Restore tab - nothing is permanent.",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = VeyroGreen
+                )
             }
         },
         confirmButton = {
@@ -1030,7 +1066,7 @@ private fun BatchConfirmDialog(
                 colors = ButtonDefaults.buttonColors(
                     containerColor = if (strategy == com.veyro.debloatengine.data.model.DebloatStrategy.FREEZE) VeyroGreen else VeyroRed
                 )
-            ) { Text("Run Engine") }
+            ) { Text("Yes, do it") }
         },
         dismissButton = {
             OutlinedButton(onClick = onCancel) { Text("Cancel", color = DimText) }
