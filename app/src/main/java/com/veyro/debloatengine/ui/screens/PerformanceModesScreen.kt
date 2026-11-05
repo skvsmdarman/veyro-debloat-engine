@@ -1,8 +1,13 @@
 package com.veyro.debloatengine.ui.screens
 
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.spring
+import androidx.compose.animation.core.tween
 import androidx.compose.animation.expandVertically
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -192,6 +197,32 @@ fun PerformanceModesScreen(
                             .clip(RoundedCornerShape(10.dp))
                             .background(VeyroPurple.copy(alpha = 0.14f))
                             .padding(horizontal = 12.dp, vertical = 8.dp)
+                    )
+                }
+                Spacer(Modifier.height(4.dp))
+                // Swipe affordance: explicit hint + animated arrow so the
+                // horizontal game strip is discoverable.
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    val hint = rememberInfiniteTransition(label = "swipehint")
+                    val nudge by hint.animateFloat(
+                        initialValue = 0f,
+                        targetValue = 1f,
+                        animationSpec = infiniteRepeatable(tween(1100), RepeatMode.Reverse),
+                        label = "nudge"
+                    )
+                    Text("‹", style = MaterialTheme.typography.labelLarge, color = DimText)
+                    Spacer(Modifier.width(6.dp))
+                    Text(
+                        "Swipe the games sideways to browse all",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = VeyroPurpleBright
+                    )
+                    Spacer(Modifier.width(6.dp))
+                    Text(
+                        "›",
+                        style = MaterialTheme.typography.labelLarge,
+                        color = VeyroPurpleBright,
+                        modifier = Modifier.padding(start = (nudge * 10).dp)
                     )
                 }
                 Spacer(Modifier.height(6.dp))

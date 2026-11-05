@@ -64,6 +64,12 @@ data class VeyroUiState(
     val isCompiling: Boolean = false,
     val toolsLog: List<String> = emptyList(),
     val toolsNotice: String? = null,
+    // Orphaned data cleaner
+    val orphans: List<SystemTweaksRepository.OrphanedFolder> = emptyList(),
+    val isScanningOrphans: Boolean = false,
+    val orphanMessage: String? = null,
+    // Status bar icon declutterer
+    val hiddenStatusIcons: Set<String> = emptySet(),
     // Gaming overdrive
     val game720p: Boolean = false,
     val gameTouchBoost: Boolean = false,
@@ -554,6 +560,7 @@ class VeyroViewModel(application: Application) : AndroidViewModel(application) {
                         sensorsOff = ToolsRepository.readSensorsOff(),
                         overlays = ToolsRepository.listOverlays(),
                         resolution = ToolsRepository.readResolution(),
+                        hiddenStatusIcons = SystemTweaksRepository.readIconBlacklist(),
                         toolsNotice = null
                     )
                 }
@@ -679,6 +686,81 @@ class VeyroViewModel(application: Application) : AndroidViewModel(application) {
                             if (res.exitCode != 0) " (error: ${res.stderr})" else ""
                     )
                 )
+            }
+        }
+    }
+
+    // ------------------------------------------------------------------
+    // Orphaned data cleaner (Scoped Storage unblocker)
+    // ------------------------------------------------------------------
+    fun scanOrphanedData() = gate {
+        viewModelScope.launch {
+            _uiState.update { it.copy(isScanningOrphans = true, orphanMessage = null) }
+            val installed = _uiState.value.allPackages.map { it.packageName }.toSet()
+            val orphans = SystemTweaksRepository.listOrphanedFolders(installed)
+            val measured = SystemTweaksRepository.measureOrphans(orphans)
+            val totalGb = measured.sumOf { it.sizeMb } / 1024f
+            _uiState.update {
+                it.copy(
+                    isScanningOrphans = false,
+                    orphans = measured,
+                    orphanMessage = if (measured.isEmpty()) "No orphaned data — storage is clean."
+                    else "${measured.size} orphaned folder(s) holding %.1f GB".format(totalGb)
+                )
+            }
+        }
+    }
+
+    fun deleteOrphan(path: String) = gate {
+        viewModelScope.launch {
+            SystemTweaksRepository.deleteOrphanedFolder(path)
+            _uiState.update { state ->
+                val remaining = state.orphans.filterNot { it.path == path }
+                val totalGb = remaining.sumOf { it.sizeMb } / 1024f
+                state.copy(
+                    orphans = remaining,
+                    orphanMessage = if (remaining.isEmpty()) "No orphaned data — storage is clean."
+                    else "${remaining.size} orphaned folder(s) holding %.1f GB".format(totalGb)
+                )
+            }
+        }
+    }
+
+    fun deleteAllOrphans() = gate {
+        viewModelScope.launch {
+            val targets = _uiState.value.orphans
+            targets.forEach { SystemTweaksRepository.deleteOrphanedFolder(it.path) }
+            _uiState.update {
+                it.copy(
+                    orphans = emptyList(),
+                    orphanMessage = "Deleted ${targets.size} orphaned folder(s) — %.1f GB freed.".format(
+                        targets.sumOf { o -> o.sizeMb } / 1024f
+                    )
+                )
+            }
+            refreshData()
+        }
+    }
+
+    // ------------------------------------------------------------------
+    // Status bar icon declutterer
+    // ------------------------------------------------------------------
+    fun toggleStatusIcon(key: String) = gate {
+        viewModelScope.launch {
+            val updated = _uiState.value.hiddenStatusIcons.toMutableSet()
+            if (!updated.add(key)) updated.remove(key)
+            val res = SystemTweaksRepository.applyIconBlacklist(updated)
+            if (res.exitCode == 0) {
+                _uiState.update { it.copy(hiddenStatusIcons = updated) }
+            }
+        }
+    }
+
+    fun resetStatusIcons() = gate {
+        viewModelScope.launch {
+            val res = SystemTweaksRepository.applyIconBlacklist(emptySet())
+            if (res.exitCode == 0) {
+                _uiState.update { it.copy(hiddenStatusIcons = emptySet()) }
             }
         }
     }

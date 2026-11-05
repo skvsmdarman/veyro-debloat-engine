@@ -1,6 +1,7 @@
 package com.veyro.debloatengine.ui.screens
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -63,6 +64,11 @@ fun ToolsScreen(
     onSetRamExpansion: (Int) -> Unit,
     onToggleOverlay: (ToolsRepository.OverlayInfo, Boolean) -> Unit,
     onOpenTutorial: () -> Unit,
+    onScanOrphans: () -> Unit,
+    onDeleteOrphan: (String) -> Unit,
+    onDeleteAllOrphans: () -> Unit,
+    onToggleStatusIcon: (String) -> Unit,
+    onResetStatusIcons: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     Column(
@@ -379,6 +385,142 @@ fun ToolsScreen(
                             )
                         }
                     }
+                }
+            }
+        }
+
+        // ---- Orphaned data cleaner (Scoped Storage unblocker) ----
+        ToolCard(
+            title = "Orphaned Data Cleaner",
+            subtitle = "Frees junk regular cleaners can't even see",
+            iconAsset = com.veyro.debloatengine.ui.components.VeyroAnim.TOOL_LOGS
+        ) {
+            Text(
+                "When you uninstall a game or heavy app, gigabytes stay trapped in " +
+                    "Android/data and Android/obb — locked by Scoped Storage. Shell access " +
+                    "bypasses those locks: scan, see the size, delete with one tap.",
+                style = MaterialTheme.typography.bodySmall
+            )
+            Spacer(Modifier.height(10.dp))
+            PressScale(onClick = onScanOrphans, enabled = !state.isScanningOrphans) {
+                Button(
+                    onClick = onScanOrphans,
+                    enabled = !state.isScanningOrphans,
+                    colors = ButtonDefaults.buttonColors(containerColor = VeyroPurple),
+                    modifier = Modifier.fillMaxWidth()
+                ) { Text(if (state.isScanningOrphans) "Scanning Android/data…" else "🔍 Scan for orphaned junk") }
+            }
+            state.orphanMessage?.let {
+                Spacer(Modifier.height(8.dp))
+                Text(
+                    it,
+                    style = MaterialTheme.typography.labelLarge,
+                    color = if (state.orphans.isEmpty()) VeyroGreen else VeyroAmber
+                )
+            }
+            if (state.orphans.isNotEmpty()) {
+                Spacer(Modifier.height(8.dp))
+                PressScale(onClick = onDeleteAllOrphans) {
+                    Button(
+                        onClick = onDeleteAllOrphans,
+                        colors = ButtonDefaults.buttonColors(containerColor = VeyroRed),
+                        modifier = Modifier.fillMaxWidth()
+                    ) { Text("🗑 Delete ALL orphans") }
+                }
+                Spacer(Modifier.height(8.dp))
+                Column(
+                    modifier = Modifier.height(210.dp).verticalScroll(rememberScrollState())
+                ) {
+                    state.orphans.forEach { orphan ->
+                        Row(
+                            Modifier
+                                .fillMaxWidth()
+                                .padding(vertical = 4.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Column(Modifier.weight(1f)) {
+                                Text(
+                                    orphan.packageName,
+                                    style = MaterialTheme.typography.labelLarge,
+                                    color = VeyroWhite,
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis
+                                )
+                                Text(
+                                    "${orphan.kind} • " + if (orphan.sizeMb >= 1024)
+                                        "%.1f GB".format(orphan.sizeMb / 1024f)
+                                    else "${orphan.sizeMb} MB",
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = if (orphan.sizeMb > 500) VeyroRed else DimText
+                                )
+                            }
+                            PressScale(onClick = { onDeleteOrphan(orphan.path) }) {
+                                Text(
+                                    "Delete",
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = VeyroRed,
+                                    modifier = Modifier
+                                        .clip(RoundedCornerShape(8.dp))
+                                        .background(VeyroRed.copy(alpha = 0.12f))
+                                        .padding(horizontal = 10.dp, vertical = 6.dp)
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        // ---- Status bar cleaner ----
+        ToolCard(
+            title = "Status Bar Cleaner",
+            subtitle = "Hide permanent clutter icons — Pixel-style minimalism",
+            iconAsset = com.veyro.debloatengine.ui.components.VeyroAnim.TOOL_SENSORS
+        ) {
+            Text(
+                "Hides useless always-on icons (VoLTE, VoWiFi, NFC…) via Android's internal " +
+                    "icon_blacklist — without affecting any functionality. Instant, reversible.",
+                style = MaterialTheme.typography.bodySmall
+            )
+            Spacer(Modifier.height(10.dp))
+            Row(
+                modifier = Modifier.horizontalScroll(rememberScrollState()),
+                horizontalArrangement = Arrangement.spacedBy(6.dp)
+            ) {
+                com.veyro.debloatengine.data.repository.SystemTweaksRepository.STATUS_BAR_ICONS.forEach { (key, label) ->
+                    val hidden = key in state.hiddenStatusIcons
+                    PressScale(onClick = { onToggleStatusIcon(key) }) {
+                        Text(
+                            label,
+                            style = MaterialTheme.typography.labelSmall,
+                            color = if (hidden) Color(0xFF0B0514) else DimText,
+                            modifier = Modifier
+                                .clip(RoundedCornerShape(10.dp))
+                                .background(if (hidden) VeyroRed else DeepPurple)
+                                .padding(horizontal = 10.dp, vertical = 8.dp)
+                        )
+                    }
+                }
+            }
+            Spacer(Modifier.height(6.dp))
+            Text(
+                if (state.hiddenStatusIcons.isEmpty()) "Nothing hidden — tap an icon to hide it"
+                else "Hidden: ${state.hiddenStatusIcons.joinToString(", ")} — tap again to un-hide",
+                style = MaterialTheme.typography.labelSmall,
+                color = if (state.hiddenStatusIcons.isEmpty()) DimText else VeyroGreen
+            )
+            if (state.hiddenStatusIcons.isNotEmpty()) {
+                Spacer(Modifier.height(4.dp))
+                PressScale(onClick = onResetStatusIcons) {
+                    Text(
+                        "Reset — show every icon again",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = VeyroPurpleBright,
+                        modifier = Modifier
+                            .clip(RoundedCornerShape(8.dp))
+                            .background(VeyroPurple.copy(alpha = 0.12f))
+                            .padding(horizontal = 10.dp, vertical = 6.dp)
+                    )
                 }
             }
         }

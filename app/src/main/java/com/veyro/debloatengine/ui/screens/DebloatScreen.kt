@@ -510,37 +510,54 @@ private fun PackageListPane(
             enter = fadeIn() + expandVertically(),
             exit = fadeOut() + shrinkVertically()
         ) {
-            Row(
+            // ---- Prominent batch action panel ----
+            Column(
                 modifier = Modifier
                     .fillMaxWidth()
                     .background(DeepPurple)
-                    .padding(12.dp),
-                verticalAlignment = Alignment.CenterVertically
+                    .padding(12.dp)
             ) {
-                Text(
-                    "${state.selectedPackages.size} selected",
-                    style = MaterialTheme.typography.labelLarge,
-                    color = VeyroWhite,
-                    modifier = Modifier.weight(1f)
-                )
-                val targets = packages.filter { it.packageName in state.selectedPackages }
-                Row(
-                    modifier = Modifier.horizontalScroll(rememberScrollState()),
-                    horizontalArrangement = Arrangement.spacedBy(6.dp)
-                ) {
-                    ActionChip("🧊 Freeze", VeyroGreen) {
-                        onBatchWithStrategy(targets, com.veyro.debloatengine.data.model.DebloatStrategy.FREEZE)
-                    }
-                    ActionChip("⏸ Disable", VeyroBlue) {
-                        onBatchWithStrategy(targets, com.veyro.debloatengine.data.model.DebloatStrategy.DISABLE)
-                    }
-                    ActionChip("🗑 Remove", VeyroRed) {
-                        onBatchWithStrategy(targets, com.veyro.debloatengine.data.model.DebloatStrategy.UNINSTALL)
-                    }
-                    ActionChip("🧹 Clear Cache", VeyroAmber) {
-                        onClearCache(targets)
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(
+                        "⚡ Batch actions — ${state.selectedPackages.size} selected",
+                        style = MaterialTheme.typography.labelLarge,
+                        color = VeyroWhite,
+                        modifier = Modifier.weight(1f)
+                    )
+                    PressScale(onClick = onClearSelection) {
+                        Text(
+                            "Clear",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = DimText,
+                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                        )
                     }
                 }
+                Spacer(Modifier.height(8.dp))
+                val targets = packages.filter { it.packageName in state.selectedPackages }
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Button(
+                        onClick = { onBatchWithStrategy(targets, com.veyro.debloatengine.data.model.DebloatStrategy.FREEZE) },
+                        colors = ButtonDefaults.buttonColors(containerColor = VeyroGreen),
+                        modifier = Modifier.weight(1f)
+                    ) { Text("🧊 Freeze", color = Color(0xFF0B0514), maxLines = 1) }
+                    Button(
+                        onClick = { onBatchWithStrategy(targets, com.veyro.debloatengine.data.model.DebloatStrategy.DISABLE) },
+                        colors = ButtonDefaults.buttonColors(containerColor = VeyroBlue),
+                        modifier = Modifier.weight(1f)
+                    ) { Text("⏸ Disable", maxLines = 1) }
+                    Button(
+                        onClick = { onBatchWithStrategy(targets, com.veyro.debloatengine.data.model.DebloatStrategy.UNINSTALL) },
+                        colors = ButtonDefaults.buttonColors(containerColor = VeyroRed),
+                        modifier = Modifier.weight(1f)
+                    ) { Text("🗑 Remove", maxLines = 1) }
+                }
+                Spacer(Modifier.height(6.dp))
+                Button(
+                    onClick = { onClearCache(targets) },
+                    colors = ButtonDefaults.buttonColors(containerColor = PanelPurple),
+                    modifier = Modifier.fillMaxWidth()
+                ) { Text("🧹 Clear Cache of Selected (${state.selectedPackages.size})") }
             }
         }
     }

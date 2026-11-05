@@ -198,4 +198,94 @@ object SystemTweaksRepository {
             recordCut(context, pkg, false)
             Pair(res.exitCode == 0, log.toString())
         }
+
+    // ------------------------------------------------------------------
+    // Scoped Storage Unblocker — orphaned /sdcard/Android/{data,obb} junk
+    // ------------------------------------------------------------------
+    data class OrphanedFolder(
+        val path: String,
+        val packageName: String,
+        val kind: String, // "data" or "obb"
+        val sizeMb: Long = -1L
+    )
+
+    /**
+     * Shell (UID 2000) bypasses Scoped Storage, so we can see the folders
+     * regular file managers can't. Any folder whose name is not an installed
+     * package is orphaned junk left behind by an uninstalled app.
+     */
+    suspend fun listOrphanedFolders(installedPackages: Set<String>): List<OrphanedFolder> =
+        withContext(Dispatchers.IO) {
+            val out = ShizukuEngine.exec(
+                "ls /sdcard/Android/data 2>/dev/null; echo '__OBB__'; ls /sdcard/Android/obb 2>/dev/null"
+            )
+            val orphans = mutableListOf<OrphanedFolder>()
+            var section = "data"
+            out.combined.lines().forEach { raw ->
+                val line = raw.trim()
+                when {
+                    line == "__OBB__" -> section = "obb"
+                    line.isBlank() || line.startsWith("ls:") -> Unit
+                    else -> {
+                        if (!installedPackages.contains(line) &&
+                            line != "com.veyro.debloatengine" &&
+                            !line.contains("..")
+                        ) {
+                            orphans += OrphanedFolder(
+                                path = "/sdcard/Android/$section/$line",
+                                packageName = line,
+                                kind = section
+                            )
+                        }
+                    }
+                }
+            }
+            orphans
+        }
+
+    /** Sizes can be slow — only computed for the orphan list, in one shell call. */
+    suspend fun measureOrphans(orphans: List<OrphanedFolder>): List<OrphanedFolder> =
+        withContext(Dispatchers.IO) {
+            if (orphans.isEmpty()) return@withContext orphans
+            val cmd = orphans.joinToString(" && ") { "du -sk \"${it.path}\" 2>/dev/null" }
+            val out = ShizukuEngine.exec(cmd)
+            val sizes = Regex("""(\d+)\s+(/sdcard/Android/(?:data|obb)/\S+)""")
+                .findAll(out.combined)
+                .associate { it.groupValues[2] to (it.groupValues[1].toLongOrNull() ?: 0L) / 1024L }
+            orphans.map { it.copy(sizeMb = sizes[it.path] ?: 0L) }
+                .sortedByDescending { it.sizeMb }
+        }
+
+    suspend fun deleteOrphanedFolder(path: String): CommandResult =
+        ShizukuEngine.exec("rm -rf \"$path\"")
+
+    // ------------------------------------------------------------------
+    // Status bar icon declutterer (secure icon_blacklist)
+    // ------------------------------------------------------------------
+    val STATUS_BAR_ICONS: Map<String, String> = linkedMapOf(
+        "nfc" to "NFC",
+        "volte" to "VoLTE",
+        "vowifi" to "VoWiFi",
+        "alarm_clock" to "Alarm",
+        "bluetooth" to "Bluetooth",
+        "hotspot" to "Hotspot",
+        "managed_profile" to "Work profile",
+        "rotate" to "Auto-rotate",
+        "ethernet" to "Ethernet"
+    )
+
+    suspend fun readIconBlacklist(): Set<String> =
+        ShizukuEngine.exec("settings get secure icon_blacklist")
+            .combined.trim()
+            .split(',')
+            .map { it.trim() }
+            .filter { it.isNotBlank() }
+            .toSet()
+
+    suspend fun applyIconBlacklist(hidden: Set<String>): CommandResult =
+        if (hidden.isEmpty()) {
+            ShizukuEngine.exec("settings delete secure icon_blacklist")
+        } else {
+            ShizukuEngine.exec("settings put secure icon_blacklist \"${hidden.joinToString(",")}\"")
+        }
 }

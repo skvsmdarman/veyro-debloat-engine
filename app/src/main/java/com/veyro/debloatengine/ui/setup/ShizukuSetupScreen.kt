@@ -2,21 +2,21 @@
 
 package com.veyro.debloatengine.ui.setup
 
+import com.veyro.debloatengine.R
 import android.content.Intent
+import android.database.ContentObserver
 import android.net.Uri
+import android.os.Handler
+import android.os.Looper
 import android.provider.Settings
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.SizeTransform
 import androidx.compose.animation.core.FastOutSlowInEasing
-import androidx.compose.animation.core.RepeatMode
-import androidx.compose.animation.core.animateFloat
-import androidx.compose.animation.core.infiniteRepeatable
-import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.togetherWith
-import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -24,9 +24,9 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -41,12 +41,12 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -57,17 +57,21 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
-import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.StrokeCap
-import androidx.compose.ui.graphics.drawscope.Stroke
-import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import androidx.compose.ui.platform.LocalLifecycleOwner
+import com.airbnb.lottie.compose.LottieAnimation
+import com.airbnb.lottie.compose.LottieCompositionSpec
+import com.airbnb.lottie.compose.LottieConstants
+import com.airbnb.lottie.compose.animateLottieCompositionAsState
+import com.airbnb.lottie.compose.rememberLottieComposition
 
 private val VeyroBg = Color(0xFF11091B)
 private val VeyroPanel = Color(0xFF1B1028)
@@ -143,7 +147,7 @@ private val setupSteps = listOf(
         instructions = listOf(
             "Freeze or debloat apps from the Debloat tab.",
             "Use Cache Flush, ad-block DNS, game modes, and Tools Lab.",
-            "After a phone reboot, Wireless debugging stops; start Shizuku again using Step 2.",
+            "After a phone reboot, start Shizuku again using Step 2. Re-pair only if needed.",
         ),
     ),
 )
@@ -151,7 +155,7 @@ private val setupSteps = listOf(
 /**
  * Drop-in, native Compose walkthrough for Veyro's Setup Guide.
  * The host should keep its own navigation and pass [onClose] and [onFinished].
- * Illustrations are small Compose shapes and text; this screen adds no Lottie runtime.
+ * Lottie illustrations are loaded from the host app's assets directory.
  */
 @Composable
 fun ShizukuSetupScreen(
@@ -159,11 +163,29 @@ fun ShizukuSetupScreen(
     onClose: () -> Unit = {},
     onFinished: () -> Unit = {},
     onInstallShizuku: (() -> Unit)? = null,
+    animationsEnabled: Boolean = true,
 ) {
     var currentStep by rememberSaveable { mutableIntStateOf(0) }
     var showingOverview by rememberSaveable { mutableStateOf(false) }
     val context = LocalContext.current
     val installClick = onInstallShizuku ?: { openShizukuPlayStore(context) }
+    val lifecycleOwner = LocalLifecycleOwner.current
+    var isResumed by remember(lifecycleOwner) {
+        mutableStateOf(lifecycleOwner.lifecycle.currentState.isAtLeast(Lifecycle.State.RESUMED))
+    }
+    DisposableEffect(lifecycleOwner) {
+        val observer = LifecycleEventObserver { _, event ->
+            when (event) {
+                Lifecycle.Event.ON_RESUME -> isResumed = true
+                Lifecycle.Event.ON_PAUSE, Lifecycle.Event.ON_STOP, Lifecycle.Event.ON_DESTROY -> isResumed = false
+                else -> Unit
+            }
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
+    }
+    val animatorDurationScaleEnabled = rememberAnimatorDurationScaleEnabled()
+    val lottieAnimationsAllowed = animationsEnabled && isResumed && animatorDurationScaleEnabled
 
     Column(
         modifier = modifier
@@ -183,8 +205,9 @@ fun ShizukuSetupScreen(
             targetState = showingOverview,
             modifier = Modifier.weight(1f),
             transitionSpec = {
-                fadeIn(tween(160, easing = FastOutSlowInEasing)) togetherWith
-                    fadeOut(tween(100)) using SizeTransform(clip = false)
+                val motionAllowed = animationsEnabled && animatorDurationScaleEnabled
+                fadeIn(tween(if (motionAllowed) 160 else 0, easing = FastOutSlowInEasing)) togetherWith
+                    fadeOut(tween(if (motionAllowed) 100 else 0)) using SizeTransform(clip = false)
             },
             label = "setup overview transition",
         ) { overview ->
@@ -202,6 +225,7 @@ fun ShizukuSetupScreen(
                     stepIndex = currentStep,
                     onSeeAllSteps = { showingOverview = true },
                     onInstallShizuku = installClick,
+                    animationsAllowed = lottieAnimationsAllowed,
                 )
             }
         }
@@ -269,6 +293,7 @@ private fun StepContent(
     stepIndex: Int,
     onSeeAllSteps: () -> Unit,
     onInstallShizuku: () -> Unit,
+    animationsAllowed: Boolean,
 ) {
     val step = setupSteps[stepIndex]
     val context = LocalContext.current
@@ -310,7 +335,7 @@ private fun StepContent(
         }
         Text(step.title, color = VeyroText, fontSize = 27.sp, lineHeight = 31.sp, fontWeight = FontWeight.ExtraBold, letterSpacing = (-0.45).sp)
         Text(step.subtitle, color = VeyroMuted, fontSize = 13.sp, lineHeight = 19.sp, modifier = Modifier.padding(top = 6.dp, bottom = 13.dp))
-        TutorialIllustration(stepIndex = stepIndex, hint = step.hint)
+        TutorialIllustration(stepIndex = stepIndex, hint = step.hint, animationsAllowed = animationsAllowed)
         Spacer(Modifier.height(14.dp))
         SectionCard {
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(9.dp)) {
@@ -321,7 +346,7 @@ private fun StepContent(
                         .background(Color(0xFF37204F)),
                     contentAlignment = Alignment.Center,
                 ) {
-                    Text(listOf("↓", "⌁", "✓", "✓")[stepIndex], color = VeyroLilac, fontSize = 15.sp, fontWeight = FontWeight.Bold)
+                    StepIcon(stepIndex = stepIndex, modifier = Modifier.size(16.dp))
                 }
                 Text(step.detailTitle, color = VeyroText, fontSize = 16.sp, fontWeight = FontWeight.Bold)
             }
@@ -351,11 +376,11 @@ private fun StepContent(
                 }
                 1 -> {
                     Spacer(Modifier.height(13.dp))
-                    NoteCard("After a reboot", "Wireless debugging resets. Repeat Step 2 only—usually about 30 seconds.", tone = NoteTone.Warm)
+                    NoteCard("After a reboot", "Start Shizuku again using Step 2. Pairing usually only needs to be done once.", tone = NoteTone.Warm)
                 }
                 2 -> {
                     Spacer(Modifier.height(13.dp))
-                    NoteCard("Connected", "The green badge confirms Veyro has Shizuku access.", tone = NoteTone.Green)
+                    NoteCard("Check the status", "In Veyro, confirm the real badge reads ENGINE ONLINE — Shizuku active.", tone = NoteTone.Green)
                 }
                 3 -> {
                     Spacer(Modifier.height(16.dp))
@@ -386,57 +411,89 @@ private fun NumberedInstruction(index: Int, text: String) {
     }
 }
 
+private val setupIllustrationAssets = listOf(
+    "veyro_setup_install.json",
+    "veyro_setup_pair.json",
+    "veyro_setup_permission.json",
+    "veyro_setup_engine.json",
+)
+
+private val setupStepIconIds = listOf(
+    R.drawable.veyro_ic_install,
+    R.drawable.veyro_ic_pair,
+    R.drawable.veyro_ic_permission,
+    R.drawable.veyro_ic_engine,
+)
+
+private const val STATIC_ILLUSTRATION_PROGRESS = 0.6f
+
 @Composable
-private fun TutorialIllustration(stepIndex: Int, hint: String) {
+private fun StepIcon(stepIndex: Int, modifier: Modifier = Modifier) {
+    Image(
+        painter = painterResource(id = setupStepIconIds[stepIndex]),
+        contentDescription = null,
+        modifier = modifier,
+    )
+}
+
+@Composable
+private fun rememberAnimatorDurationScaleEnabled(): Boolean {
     val context = LocalContext.current
-    val motionAllowed = remember {
-        runCatching {
-            Settings.Global.getFloat(context.contentResolver, Settings.Global.ANIMATOR_DURATION_SCALE, 1f) > 0f
-        }.getOrDefault(true)
+    val enabledState = remember(context) {
+        mutableStateOf(readAnimatorDurationScaleEnabled(context))
     }
-    val transition = rememberInfiniteTransition(label = "setup illustration")
-    val floatY by transition.animateFloat(
-        initialValue = 0f,
-        targetValue = if (motionAllowed) 4f else 0f,
-        animationSpec = infiniteRepeatable(tween(1900, easing = FastOutSlowInEasing), RepeatMode.Reverse),
-        label = "gentle illustration float",
+    DisposableEffect(context, enabledState) {
+        val observer = object : ContentObserver(Handler(Looper.getMainLooper())) {
+            override fun onChange(selfChange: Boolean) {
+                enabledState.value = readAnimatorDurationScaleEnabled(context)
+            }
+        }
+        val uri = Settings.Global.getUriFor(Settings.Global.ANIMATOR_DURATION_SCALE)
+        runCatching { context.contentResolver.registerContentObserver(uri, false, observer) }
+        onDispose { runCatching { context.contentResolver.unregisterContentObserver(observer) } }
+    }
+    return enabledState.value
+}
+
+private fun readAnimatorDurationScaleEnabled(context: android.content.Context): Boolean =
+    runCatching {
+        Settings.Global.getFloat(context.contentResolver, Settings.Global.ANIMATOR_DURATION_SCALE, 1f) > 0f
+    }.getOrDefault(true)
+
+@Composable
+private fun TutorialIllustration(stepIndex: Int, hint: String, animationsAllowed: Boolean) {
+    val assetPath = setupIllustrationAssets[stepIndex]
+    val compositionResult = rememberLottieComposition(LottieCompositionSpec.Asset(assetPath))
+    val composition by compositionResult
+    val animatedProgress by animateLottieCompositionAsState(
+        composition = composition,
+        isPlaying = animationsAllowed,
+        iterations = LottieConstants.IterateForever,
     )
-    val permissionPulse by transition.animateFloat(
-        initialValue = 1f,
-        targetValue = if (stepIndex == 2 && motionAllowed) 1.025f else 1f,
-        animationSpec = infiniteRepeatable(tween(1700, easing = FastOutSlowInEasing), RepeatMode.Reverse),
-        label = "permission prompt pulse",
-    )
+    val progress = if (animationsAllowed) animatedProgress else STATIC_ILLUSTRATION_PROGRESS
+
     Box(
         modifier = Modifier
             .fillMaxWidth()
-            .height(188.dp)
+            .aspectRatio(720f / 420f)
             .clip(RoundedCornerShape(24.dp))
             .background(Brush.radialGradient(listOf(Color(0xFF301A48), Color(0xFF21112F), Color(0xFF1A1026))))
             .border(1.dp, Color.White.copy(alpha = .06f), RoundedCornerShape(24.dp)),
         contentAlignment = Alignment.Center,
     ) {
-        Canvas(Modifier.fillMaxSize()) {
-            drawCircle(Color(0x337540D4), radius = 67.dp.toPx(), center = Offset(0f, size.height))
-            drawCircle(Color(0x338E58F9), radius = 58.dp.toPx(), center = Offset(size.width, 0f))
-            drawCircle(Color(0x66B897FF), radius = 2.2.dp.toPx(), center = Offset(size.width * .22f, size.height * .28f))
-            drawCircle(Color(0x66B897FF), radius = 2.2.dp.toPx(), center = Offset(size.width * .79f, size.height * .27f))
-            drawCircle(Color(0x66B897FF), radius = 2.2.dp.toPx(), center = Offset(size.width * .76f, size.height * .79f))
-        }
-        Box(
-            modifier = Modifier
-                .graphicsLayer { translationY = -floatY.dp.toPx() }
-                .shadow(16.dp, RoundedCornerShape(20.dp), ambientColor = Color.Black.copy(alpha = .36f))
-                .clip(RoundedCornerShape(20.dp))
-                .background(Brush.linearGradient(listOf(Color(0xFF281B35), Color(0xFF140C1F))))
-                .border(1.dp, Color.White.copy(alpha = .15f), RoundedCornerShape(20.dp))
-                .padding(10.dp),
-        ) {
-            IllustrationPhone(stepIndex = stepIndex, permissionPulse = permissionPulse)
+        if (composition != null) {
+            LottieAnimation(
+                composition = composition,
+                progress = { progress },
+                modifier = Modifier.fillMaxSize(),
+            )
+        } else {
+            // Keep a recognizable, static placeholder visible while the asset loads or if it fails.
+            StepIcon(stepIndex = stepIndex, modifier = Modifier.size(84.dp))
         }
         HintPill(
             text = hint,
-            modifier = Modifier.align(Alignment.TopStart).padding(start = 12.dp, top = 35.dp),
+            modifier = Modifier.align(Alignment.TopStart).padding(start = 12.dp, top = 12.dp),
         )
         HintPill(
             text = when (stepIndex) {
@@ -448,161 +505,6 @@ private fun TutorialIllustration(stepIndex: Int, hint: String) {
             modifier = Modifier.align(Alignment.BottomEnd).padding(end = 12.dp, bottom = 28.dp),
             accent = if (stepIndex >= 2) VeyroGreen else VeyroLilac,
         )
-    }
-}
-
-@Composable
-private fun IllustrationPhone(stepIndex: Int, permissionPulse: Float) {
-    Column(modifier = Modifier.width(if (stepIndex == 1) 190.dp else 202.dp)) {
-        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-            Text("9:41", color = Color(0xFFD4C8E1), fontSize = 8.sp)
-            Box(Modifier.width(28.dp).height(3.dp).clip(CircleShape).background(Color(0xFF5C4C6E)))
-            Text("● 96%", color = Color(0xFFD4C8E1), fontSize = 8.sp)
-        }
-        Spacer(Modifier.height(8.dp))
-        when (stepIndex) {
-            0 -> InstallScene()
-            1 -> PairScene()
-            2 -> PermissionScene(permissionPulse = permissionPulse)
-            else -> EngineScene()
-        }
-    }
-}
-
-@Composable
-private fun InstallScene() {
-    IllustrationScreen {
-        Text("Google Play", color = VeyroMuted, fontSize = 8.sp)
-        Spacer(Modifier.height(7.dp))
-        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            Box(Modifier.size(31.dp).clip(RoundedCornerShape(10.dp)).background(Brush.linearGradient(listOf(Color(0xFF5B91D2), Color(0xFF2D5187)))), contentAlignment = Alignment.Center) {
-                Text("▶", color = Color.White, fontSize = 14.sp)
-            }
-            Column(modifier = Modifier.weight(1f)) {
-                Text("Shizuku", color = VeyroText, fontSize = 11.sp, fontWeight = FontWeight.Bold)
-                Text("by Rikka", color = VeyroMuted, fontSize = 8.sp)
-            }
-            Text("INSTALL", color = Color.White, fontSize = 7.sp, fontWeight = FontWeight.ExtraBold, modifier = Modifier.clip(RoundedCornerShape(8.dp)).background(Color(0xFF6636BD)).padding(horizontal = 8.dp, vertical = 5.dp))
-        }
-        Spacer(Modifier.height(11.dp))
-        PlaceholderLine(1f); Spacer(Modifier.height(5.dp)); PlaceholderLine(.74f); Spacer(Modifier.height(5.dp)); PlaceholderLine(.54f)
-    }
-}
-
-@Composable
-private fun PairScene() {
-    IllustrationScreen {
-        Text("Developer options", color = VeyroMuted, fontSize = 8.sp)
-        Spacer(Modifier.height(9.dp))
-        Row(
-            modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(9.dp)).background(Color(0xFF261735)).padding(8.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.SpaceBetween,
-        ) {
-            Text("Wireless debugging", color = VeyroText, fontSize = 8.sp, fontWeight = FontWeight.SemiBold)
-            Box(Modifier.width(24.dp).height(13.dp).clip(CircleShape).background(Color(0xFF4C2A77)), contentAlignment = Alignment.CenterEnd) {
-                Box(Modifier.padding(end = 2.dp).size(9.dp).clip(CircleShape).background(VeyroLilac))
-            }
-        }
-        Spacer(Modifier.height(8.dp))
-        Text("Pairing code", color = VeyroMuted, fontSize = 8.sp)
-        Text("042   761", color = VeyroText, fontSize = 12.sp, fontWeight = FontWeight.ExtraBold, letterSpacing = 1.5.sp)
-    }
-}
-
-@Composable
-private fun PermissionScene(permissionPulse: Float) {
-    IllustrationScreen {
-        Row(
-            modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(8.dp)).background(Color(0xFF12291E)).padding(7.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(6.dp),
-        ) {
-            Box(Modifier.size(6.dp).clip(CircleShape).background(VeyroGreen))
-            Text("ENGINE ONLINE", color = VeyroGreen, fontSize = 8.sp, fontWeight = FontWeight.ExtraBold)
-        }
-        Spacer(Modifier.height(8.dp))
-        Text("Shizuku permission", color = VeyroMuted, fontSize = 8.sp)
-        Text("Veyro Debloat Engine", color = VeyroMuted, fontSize = 8.sp, modifier = Modifier.padding(top = 4.dp))
-        Spacer(Modifier.height(7.dp))
-        PlaceholderLine(1f); Spacer(Modifier.height(5.dp)); PlaceholderLine(.76f)
-    }
-    Surface(
-        modifier = Modifier
-            .padding(top = 22.dp)
-            .width(148.dp)
-            .graphicsLayer { scaleX = permissionPulse; scaleY = permissionPulse }
-            .shadow(12.dp, RoundedCornerShape(13.dp)),
-        color = Color(0xFFF8F5FB),
-        shape = RoundedCornerShape(13.dp),
-    ) {
-        Column(Modifier.padding(10.dp)) {
-            Text("Allow Veyro?", color = Color(0xFF30263A), fontSize = 9.sp, fontWeight = FontWeight.ExtraBold)
-            Text("Let this app use Shizuku service", color = Color(0xFF655A70), fontSize = 7.sp, lineHeight = 10.sp, modifier = Modifier.padding(top = 4.dp, bottom = 7.dp))
-            Text("ALLOW", color = Color.White, fontSize = 8.sp, fontWeight = FontWeight.ExtraBold, textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(7.dp)).background(Color(0xFF7948D7)).padding(vertical = 5.dp))
-        }
-    }
-}
-
-@Composable
-private fun EngineScene() {
-    IllustrationScreen {
-        Row(
-            modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(8.dp)).background(Color(0xFF12291E)).padding(7.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(6.dp),
-        ) {
-            Box(Modifier.size(6.dp).clip(CircleShape).background(VeyroGreen))
-            Text("ENGINE ONLINE", color = VeyroGreen, fontSize = 8.sp, fontWeight = FontWeight.ExtraBold)
-        }
-        Text("Veyro tools", color = VeyroMuted, fontSize = 8.sp, modifier = Modifier.padding(top = 7.dp))
-        Row(horizontalArrangement = Arrangement.spacedBy(5.dp), modifier = Modifier.padding(top = 7.dp)) {
-            FeatureMiniCard("❄", "Freeze")
-            FeatureMiniCard("⚡", "Cache flush")
-        }
-        Row(horizontalArrangement = Arrangement.spacedBy(5.dp), modifier = Modifier.padding(top = 5.dp)) {
-            FeatureMiniCard("◉", "DNS")
-            FeatureMiniCard("✦", "Tools Lab")
-        }
-    }
-}
-
-@Composable
-private fun IllustrationScreen(content: @Composable androidx.compose.foundation.layout.ColumnScope.() -> Unit) {
-    Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clip(RoundedCornerShape(12.dp))
-            .background(Color(0xFF1B1027))
-            .padding(10.dp),
-        content = content,
-    )
-}
-
-@Composable
-private fun PlaceholderLine(fraction: Float) {
-    Box(
-        Modifier
-            .fillMaxWidth(fraction)
-            .height(3.dp)
-            .clip(CircleShape)
-            .background(Color(0xFF443250)),
-    )
-}
-
-@Composable
-private fun RowScope.FeatureMiniCard(icon: String, label: String) {
-    Row(
-        modifier = Modifier
-            .weight(1f)
-            .clip(RoundedCornerShape(8.dp))
-            .background(Color(0xFF28183A))
-            .padding(horizontal = 6.dp, vertical = 7.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(4.dp),
-    ) {
-        Text(icon, color = VeyroLilac, fontSize = 8.sp, fontWeight = FontWeight.Bold)
-        Text(label, color = Color(0xFFE6D9F4), fontSize = 7.sp, fontWeight = FontWeight.Bold, maxLines = 1)
     }
 }
 
@@ -628,7 +530,7 @@ private fun SectionCard(content: @Composable androidx.compose.foundation.layout.
             .background(Brush.linearGradient(listOf(Color(0xFF21142F), VeyroPanel)))
             .border(1.dp, Color.White.copy(alpha = .045f), RoundedCornerShape(20.dp))
             .padding(15.dp),
-        content = content,
+        content = { content() },
     )
 }
 
@@ -720,7 +622,7 @@ private fun OverviewContent(currentStep: Int, onSelectStep: (Int) -> Unit, onClo
                 horizontalArrangement = Arrangement.spacedBy(10.dp),
             ) {
                 Box(Modifier.size(32.dp).clip(RoundedCornerShape(10.dp)).background(if (index == currentStep) VeyroPurple else Color(0xFF37204D)), contentAlignment = Alignment.Center) {
-                    Text("${index + 1}", color = VeyroText, fontSize = 12.sp, fontWeight = FontWeight.ExtraBold)
+                    StepIcon(stepIndex = index, modifier = Modifier.size(19.dp))
                 }
                 Column(Modifier.weight(1f)) {
                     Text(step.title, color = VeyroText, fontSize = 13.sp, fontWeight = FontWeight.Bold)

@@ -186,6 +186,11 @@ private fun VeyroRoot(openUpdateDialogOnStart: Boolean, vm: VeyroViewModel = vie
                         onSetRamExpansion = { vm.setRamExpansion(it) },
                         onToggleOverlay = { ov, enable -> vm.toggleOverlay(ov, enable) },
                         onOpenTutorial = { showShizukuTutorial = true },
+                        onScanOrphans = { vm.scanOrphanedData() },
+                        onDeleteOrphan = { vm.deleteOrphan(it) },
+                        onDeleteAllOrphans = { vm.deleteAllOrphans() },
+                        onToggleStatusIcon = { vm.toggleStatusIcon(it) },
+                        onResetStatusIcons = { vm.resetStatusIcons() },
                         modifier = Modifier.fillMaxSize()
                     )
                 }
