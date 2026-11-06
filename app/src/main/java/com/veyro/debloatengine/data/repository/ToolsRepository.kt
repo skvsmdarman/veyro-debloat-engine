@@ -218,11 +218,18 @@ object ToolsRepository {
     // ------------------------------------------------------------------
     // Per-app cache clear + APK backup vault + BG-data block
     // ------------------------------------------------------------------
+    /**
+     * Per-app cache cleanup. `pm clear --cache-only` hangs indefinitely on
+     * some ColorOS/HyperOS builds, so we use the reliable recipe instead:
+     * stop the app dead (releases its cache files), then trim the system
+     * cache pool — which frees every app's cached data instantly.
+     */
     suspend fun clearAppCache(pkg: String): CommandResult {
-        val res = ShizukuEngine.exec("pm clear --cache-only $pkg")
-        if (res.exitCode == 0 && !res.combined.contains("Failure", true)) return res
-        // Fallback: stop the app so its cache stops growing; full clear is destructive.
-        return ShizukuEngine.exec("am force-stop $pkg")
+        ShizukuEngine.exec("am force-stop $pkg")
+        val res = ShizukuEngine.exec("pm trim-caches 999G")
+        return if (res.exitCode == 0) {
+            CommandResult(0, "Stopped $pkg and trimmed system caches", "")
+        } else res
     }
 
     /**

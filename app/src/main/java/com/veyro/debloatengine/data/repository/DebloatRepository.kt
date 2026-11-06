@@ -297,8 +297,14 @@ class DebloatRepository {
                 log.appendLine("> cmd package suspend $pkg")
                 val res = ShizukuEngine.exec("cmd package suspend $pkg")
                 log.appendLine(res.combined.ifBlank { "exit ${res.exitCode}" })
-                val ok = res.isSuccess || res.combined.contains("suspended", ignoreCase = true) ||
-                    res.combined.contains("already suspended", ignoreCase = true)
+                var ok = res.isSuccess || res.combined.contains("suspended", ignoreCase = true)
+                if (!ok) {
+                    // Some OEM builds return empty/non-zero output on success —
+                    // verify the actual package state instead of trusting text.
+                    val probe = ShizukuEngine.exec("dumpsys package $pkg | grep -m1 'suspended='")
+                    ok = probe.combined.contains("suspended=true")
+                    if (ok) log.appendLine("verified: package is suspended")
+                }
                 return@withContext record(ok)
             }
             DebloatStrategy.DISABLE -> {

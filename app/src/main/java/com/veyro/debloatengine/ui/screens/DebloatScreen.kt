@@ -47,6 +47,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.veyro.debloatengine.data.model.AppItem
 import com.veyro.debloatengine.ui.components.PressScale
 import com.veyro.debloatengine.ui.components.ShimmerSkeletonList
@@ -104,12 +105,6 @@ fun DebloatScreen(
     val context = LocalContext.current
 
     Column(modifier = modifier.fillMaxSize()) {
-        // ---- Non-destructive strategy selector ----
-        StrategySelector(
-            selected = state.strategy,
-            onSelect = onStrategyChange
-        )
-
         // ---- Tab pills ----
         Row(
             modifier = Modifier
@@ -237,68 +232,6 @@ fun DebloatScreen(
 
 // ---------------------------------------------------------------------------
 // Strategy selector: how the engine neutralizes packages
-// ---------------------------------------------------------------------------
-@Composable
-private fun StrategySelector(
-    selected: com.veyro.debloatengine.data.model.DebloatStrategy,
-    onSelect: (com.veyro.debloatengine.data.model.DebloatStrategy) -> Unit
-) {
-    Column(Modifier.padding(horizontal = 16.dp)) {
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            com.veyro.debloatengine.data.model.DebloatStrategy.entries.forEach { s ->
-                PressScale(onClick = { onSelect(s) }, modifier = Modifier.weight(1f)) {
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .clip(RoundedCornerShape(12.dp))
-                            .background(if (s == selected) VeyroPurple else PanelPurple)
-                            .padding(vertical = 8.dp),
-                        horizontalArrangement = Arrangement.Center,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        // Custom branded strategy animation (untinted)
-                        com.veyro.debloatengine.ui.components.LottieIcon(
-                            resId = when (s) {
-                                com.veyro.debloatengine.data.model.DebloatStrategy.FREEZE ->
-                                    com.veyro.debloatengine.ui.components.VeyroAnim.veyroFreeze
-                                com.veyro.debloatengine.data.model.DebloatStrategy.DISABLE ->
-                                    com.veyro.debloatengine.ui.components.VeyroAnim.veyroDisable
-                                com.veyro.debloatengine.data.model.DebloatStrategy.UNINSTALL ->
-                                    com.veyro.debloatengine.ui.components.VeyroAnim.veyroUninstall
-                            },
-                            color = VeyroWhite,
-                            size = 18.dp,
-                            tint = false
-                        )
-                        Spacer(Modifier.width(6.dp))
-                        Text(
-                            s.label.dropWhile { !it.isLetter() },
-                            style = MaterialTheme.typography.labelSmall,
-                            color = if (s == selected) VeyroWhite else DimText,
-                            maxLines = 1
-                        )
-                    }
-                }
-            }
-        }
-        Spacer(Modifier.height(4.dp))
-        Text(
-            when (selected) {
-                com.veyro.debloatengine.data.model.DebloatStrategy.FREEZE ->
-                    "Safest — apps can never run, nothing is deleted, data kept. 1-tap restore."
-                com.veyro.debloatengine.data.model.DebloatStrategy.DISABLE ->
-                    "Apps stay installed with all their data, icon hidden. 1-tap restore."
-                com.veyro.debloatengine.data.model.DebloatStrategy.UNINSTALL ->
-                    "Removed for user 0 only, app data kept. Restorable any time."
-            },
-            style = MaterialTheme.typography.labelSmall,
-            color = if (selected == com.veyro.debloatengine.data.model.DebloatStrategy.FREEZE) VeyroGreen else DimText
-        )
-    }
-}
-
-// ---------------------------------------------------------------------------
-// Wake-Lock & Background Execution Cutter (Feature 7, AppOps)
 // ---------------------------------------------------------------------------
 @Composable
 private fun WakeLockPane(
@@ -537,28 +470,40 @@ private fun PackageListPane(
                 Spacer(Modifier.height(8.dp))
                 val targets = packages.filter { it.packageName in state.selectedPackages }
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Button(
-                        onClick = { onBatchWithStrategy(targets, com.veyro.debloatengine.data.model.DebloatStrategy.FREEZE) },
-                        colors = ButtonDefaults.buttonColors(containerColor = VeyroGreen),
+                    BatchActionButton(
+                        label = "Freeze",
+                        anim = com.veyro.debloatengine.ui.components.VeyroAnim.veyroFreeze,
+                        container = VeyroGreen, content = Color(0xFF0B0514),
+                        targets = targets,
+                        strategy = com.veyro.debloatengine.data.model.DebloatStrategy.FREEZE,
+                        onRun = onBatchWithStrategy,
                         modifier = Modifier.weight(1f)
-                    ) { Text("FREEZE", fontWeight = FontWeight.Bold, color = Color(0xFF0B0514)) }
-                    Button(
-                        onClick = { onBatchWithStrategy(targets, com.veyro.debloatengine.data.model.DebloatStrategy.DISABLE) },
-                        colors = ButtonDefaults.buttonColors(containerColor = VeyroBlue),
+                    )
+                    BatchActionButton(
+                        label = "Disable",
+                        anim = com.veyro.debloatengine.ui.components.VeyroAnim.veyroDisable,
+                        container = VeyroBlue, content = VeyroWhite,
+                        targets = targets,
+                        strategy = com.veyro.debloatengine.data.model.DebloatStrategy.DISABLE,
+                        onRun = onBatchWithStrategy,
                         modifier = Modifier.weight(1f)
-                    ) { Text("DISABLE", fontWeight = FontWeight.Bold) }
-                    Button(
-                        onClick = { onBatchWithStrategy(targets, com.veyro.debloatengine.data.model.DebloatStrategy.UNINSTALL) },
-                        colors = ButtonDefaults.buttonColors(containerColor = VeyroRed),
+                    )
+                    BatchActionButton(
+                        label = "Remove",
+                        anim = com.veyro.debloatengine.ui.components.VeyroAnim.veyroUninstall,
+                        container = VeyroRed, content = VeyroWhite,
+                        targets = targets,
+                        strategy = com.veyro.debloatengine.data.model.DebloatStrategy.UNINSTALL,
+                        onRun = onBatchWithStrategy,
                         modifier = Modifier.weight(1f)
-                    ) { Text("REMOVE", fontWeight = FontWeight.Bold) }
+                    )
                 }
                 Spacer(Modifier.height(6.dp))
                 Button(
                     onClick = { onClearCache(targets) },
                     colors = ButtonDefaults.buttonColors(containerColor = PanelPurple),
                     modifier = Modifier.fillMaxWidth()
-                ) { Text("🧹 Clear Cache of Selected (${state.selectedPackages.size}) — safe") }
+                ) { Text("🧹 Stop & Clear Cache (${state.selectedPackages.size}) — safe") }
                 Spacer(Modifier.height(6.dp))
                 Text(
                     "Every action asks you to confirm first. Freeze & cache-clean are always safe; " +
@@ -941,16 +886,14 @@ private fun BatchProgressPanel(
         Spacer(Modifier.height(8.dp))
         Column(
             modifier = Modifier
-                .height(110.dp)
+                .height(150.dp)
                 .verticalScroll(rememberScrollState())
         ) {
-            logs.takeLast(6).forEach { line ->
+            logs.takeLast(4).forEach { line ->
                 Text(
                     line,
                     style = MaterialTheme.typography.labelSmall,
-                    color = DimText,
-                    maxLines = 3,
-                    overflow = TextOverflow.Ellipsis
+                    color = DimText
                 )
             }
         }
@@ -975,6 +918,34 @@ private fun TextButtonSmall(text: String, onClick: () -> Unit) {
 // ---------------------------------------------------------------------------
 // Per-app action chip
 // ---------------------------------------------------------------------------
+@Composable
+private fun BatchActionButton(
+    label: String,
+    anim: Int,
+    container: Color,
+    content: Color,
+    targets: List<AppItem>,
+    strategy: com.veyro.debloatengine.data.model.DebloatStrategy,
+    onRun: (List<AppItem>, com.veyro.debloatengine.data.model.DebloatStrategy) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Button(
+        onClick = { onRun(targets, strategy) },
+        colors = ButtonDefaults.buttonColors(containerColor = container),
+        contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 6.dp, vertical = 8.dp),
+        modifier = modifier
+    ) {
+        com.veyro.debloatengine.ui.components.LottieIcon(
+            resId = anim,
+            color = content,
+            size = 18.dp,
+            tint = false
+        )
+        Spacer(Modifier.width(4.dp))
+        Text(label, fontSize = 12.sp, fontWeight = FontWeight.Bold, color = content, maxLines = 1)
+    }
+}
+
 @Composable
 private fun ActionChip(text: String, accent: Color, onClick: () -> Unit) {
     PressScale(onClick = onClick) {

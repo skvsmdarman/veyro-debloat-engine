@@ -118,10 +118,33 @@ object ShizukuEngine {
             val stderr = StringBuilder()
             val stdoutReader = BufferedReader(InputStreamReader(process.inputStream))
             val stderrReader = BufferedReader(InputStreamReader(process.errorStream))
-            var line: String?
-            while (stdoutReader.readLine().also { line = it } != null) stdout.append(line).append('\n')
-            while (stderrReader.readLine().also { line = it } != null) stderr.append(line).append('\n')
-            val exit = process.waitFor()
+
+            // Some OEM commands (e.g. pm clear --cache-only on ColorOS) hang
+            // forever — read streams on a daemon thread and enforce a hard
+            // timeout so the engine never locks up.
+            val readOut = Thread { try { var l: String?; while (stdoutReader.readLine().also { l = it } != null) stdout.append(l).append('\n') } catch (_: Exception) { } }
+            val readErr = Thread { try { var l: String?; while (stderrReader.readLine().also { l = it } != null) stderr.append(l).append('\n') } catch (_: Exception) { } }
+            readOut.isDaemon = true; readErr.isDaemon = true
+            readOut.start(); readErr.start()
+
+            // Shizuku's remote-process wrapper reports waitFor() success before
+            // the process actually exits, so poll exitValue() on a deadline
+            // instead of trusting waitFor()'s return value.
+            val deadline = System.currentTimeMillis() + 20_000
+            var exit = Int.MIN_VALUE
+            while (System.currentTimeMillis() < deadline) {
+                val done = runCatching { exit = process.exitValue() }.isSuccess
+                if (done) break
+                Thread.sleep(100)
+            }
+            if (exit == Int.MIN_VALUE) {
+                process.destroy()
+                return@withContext CommandResult(-1, stdout.toString().trim(),
+                    "Timed out after 20s — command not supported on this OS build.")
+            }
+            // Drain the tail of the streams before reading (fast commands
+            // would otherwise race the reader threads and lose output).
+            readOut.join(1500); readErr.join(1500)
             CommandResult(exit, stdout.toString().trim(), stderr.toString().trim())
         } catch (e: Exception) {
             CommandResult(-1, "", "Execution error: ${e.localizedMessage}")
