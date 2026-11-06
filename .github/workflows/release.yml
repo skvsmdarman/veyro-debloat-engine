@@ -36,9 +36,6 @@ jobs:
           name: veyro-debloat-engine
           path: dist/veyro-debloat-engine.apk
 
-      - name: Attach APK to GitHub Release (on tag)
-        if: startsWith(github.ref, 'refs/tags/v')
-        uses: softprops/action-gh-release@v2
-        with:
-          files: dist/veyro-debloat-engine.apk
-          fail_on_unmatched_files: true
+      # NOTE: releases are created manually by uploading the locally-built,
+      # locally-signed APK (CI debug-key APKs would break update-over-install
+      # signature matching for existing users).

@@ -313,14 +313,23 @@ class DebloatRepository {
                 log.appendLine("> pm disable-user --user 0 $pkg")
                 val res = ShizukuEngine.exec("pm disable-user --user 0 $pkg")
                 log.appendLine(res.combined.ifBlank { "exit ${res.exitCode}" })
-                val ok = res.isSuccess || res.combined.contains("new state: disabled", ignoreCase = true)
-                if (!ok) {
-                    log.appendLine("Disable refused — falling back to suspend")
-                    val r2 = ShizukuEngine.exec("cmd package suspend $pkg")
-                    log.appendLine(r2.combined.ifBlank { "exit ${r2.exitCode}" })
-                    return@withContext record(r2.isSuccess || r2.combined.contains("suspended", ignoreCase = true))
+                // OEM builds sometimes return empty/zero output while doing
+                // nothing — verify the real enabled state instead.
+                val probe = ShizukuEngine.exec("dumpsys package $pkg | grep -m1 'enabled='")
+                val disabled = probe.combined.contains("enabled=2") ||
+                    probe.combined.contains("enabled=3") ||
+                    probe.combined.contains("enabled=4")
+                if (disabled) {
+                    log.appendLine("verified: package is disabled")
+                    return@withContext record(true)
                 }
-                return@withContext record(true)
+                log.appendLine("Disable did not take effect — falling back to suspend")
+                val r2 = ShizukuEngine.exec("cmd package suspend $pkg")
+                log.appendLine(r2.combined.ifBlank { "exit ${r2.exitCode}" })
+                val probe2 = ShizukuEngine.exec("dumpsys package $pkg | grep -m1 'suspended='")
+                val suspended = probe2.combined.contains("suspended=true")
+                if (suspended) log.appendLine("verified: package is suspended")
+                return@withContext record(suspended)
             }
             DebloatStrategy.UNINSTALL -> {
                 // Backup vault: extract the clean APK to /sdcard/Veyro/Backups/ first
@@ -332,7 +341,13 @@ class DebloatRepository {
                 var res = ShizukuEngine.exec("pm uninstall -k --user 0 $pkg")
                 log.appendLine(res.combined.ifBlank { "exit ${res.exitCode}" })
                 if (res.isSuccess && !res.combined.contains("Failure", ignoreCase = true)) {
-                    return@withContext record(true)
+                    // verify it's really gone for user 0
+                    val probe = ShizukuEngine.exec("pm list packages --user 0 $pkg")
+                    if (probe.combined.isBlank()) {
+                        log.appendLine("verified: removed for user 0")
+                        return@withContext record(true)
+                    }
+                    log.appendLine("uninstall reported success but package still listed — continuing with fallbacks")
                 }
                 log.appendLine("Uninstall refused — falling back to disable")
                 res = ShizukuEngine.exec("pm disable-user --user 0 $pkg")

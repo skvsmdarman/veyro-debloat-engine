@@ -223,7 +223,7 @@ fun DebloatScreen(
     if (state.pendingBatchTargets.isNotEmpty()) {
         BatchConfirmDialog(
             targets = state.pendingBatchTargets,
-            strategy = state.strategy,
+            strategy = state.pendingBatchStrategy,
             onConfirm = onConfirmBatch,
             onCancel = onCancelBatch
         )

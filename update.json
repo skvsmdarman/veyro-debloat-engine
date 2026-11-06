@@ -1,7 +1,7 @@
 {
-  "versionCode": 1,
-  "versionName": "1.0.0",
-  "releaseNotes": "• Initial public release\n• Freeze / Disable / Uninstall debloat strategies with full restore engine\n• Eco · Performance · Gaming modes with Game Focus overdrive\n• OS-wide AdBlock DNS, Display Smoother, Wake-Lock cutter\n• Tools Lab: AOT compiler, battery analyzer, RAM expansion auditor, sensor kill-switch, log flush, overlay purger\n• GitHub auto-updater built in",
-  "downloadUrl": "https://github.com/skvsmdarman/veyro-debloat-engine/releases/download/v1.0.0/veyro-debloat-engine.apk",
+  "versionCode": 3,
+  "versionName": "1.1.1",
+  "releaseNotes": "• Fixed: batch actions now verify real results (Freeze / Disable / Remove all reliable)\n• Fixed: cache clearing no longer hangs on ColorOS/HyperOS\n• New: Orphaned Data Cleaner — frees gigabytes trapped in Android/data + obb\n• New: Status Bar Cleaner — hide VoLTE, NFC, alarm & more\n• New: animated Shizuku setup tutorial\n• Batch panel redesigned with confirm-first safety verdicts",
+  "downloadUrl": "https://github.com/skvsmdarman/veyro-debloat-engine/releases/download/v1.1.1/veyro-debloat-engine.apk",
   "mandatory": false
 }
