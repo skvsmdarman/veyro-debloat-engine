@@ -1,7 +1,7 @@
 {
-  "versionCode": 3,
-  "versionName": "1.1.1",
-  "releaseNotes": "• Fixed: batch actions now verify real results (Freeze / Disable / Remove all reliable)\n• Fixed: cache clearing no longer hangs on ColorOS/HyperOS\n• New: Orphaned Data Cleaner — frees gigabytes trapped in Android/data + obb\n• New: Status Bar Cleaner — hide VoLTE, NFC, alarm & more\n• New: animated Shizuku setup tutorial\n• Batch panel redesigned with confirm-first safety verdicts",
-  "downloadUrl": "https://github.com/skvsmdarman/veyro-debloat-engine/releases/download/v1.1.1/veyro-debloat-engine.apk",
+  "versionCode": 4,
+  "versionName": "1.2.0",
+  "releaseNotes": "• NEW: Debloat Presets — one-tap Safe Clean, Privacy Shield & Speed Boost\n• Presets auto-select the right packages, you confirm before anything runs\n• All batch actions state-verified (no more false FAILED results)\n• Reliability: 20s command deadline, no more frozen batches on ColorOS/HyperOS",
+  "downloadUrl": "https://github.com/skvsmdarman/veyro-debloat-engine/releases/download/v1.2.0/veyro-debloat-engine.apk",
   "mandatory": false
 }

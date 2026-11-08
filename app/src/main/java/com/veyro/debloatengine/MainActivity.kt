@@ -162,6 +162,7 @@ private fun VeyroRoot(openUpdateDialogOnStart: Boolean, vm: VeyroViewModel = vie
                         onCutAllWakeLocks = { vm.cutAllWakeLocks(context, it) },
                         onClearCache = { vm.clearAppCaches(context, it) },
                         onBatchWithStrategy = { targets, strategy -> vm.runBatchWithStrategy(context, targets, strategy) },
+                        onApplyPreset = { vm.applyPreset(it) },
                         modifier = Modifier.fillMaxSize()
                     )
                     com.veyro.debloatengine.ui.components.VeyroNavDestination.Modes -> PerformanceModesScreen(

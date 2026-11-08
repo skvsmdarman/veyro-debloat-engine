@@ -100,11 +100,25 @@ fun DebloatScreen(
     onCutAllWakeLocks: (List<AppItem>) -> Unit,
     onClearCache: (List<AppItem>) -> Unit,
     onBatchWithStrategy: (List<AppItem>, com.veyro.debloatengine.data.model.DebloatStrategy) -> Unit,
+    onApplyPreset: (String) -> Unit,
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
 
     Column(modifier = modifier.fillMaxSize()) {
+        // ---- Curated presets: one tap builds the selection for you ----
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp, vertical = 6.dp)
+                .horizontalScroll(rememberScrollState()),
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            PresetChip("🧹 Safe Clean", "both lists", onApplyPreset, "safe_clean")
+            PresetChip("🛡 Privacy Shield", "cpu list", onApplyPreset, "privacy")
+            PresetChip("🎮 Speed Boost", "ram list", onApplyPreset, "speed")
+        }
+
         // ---- Tab pills ----
         Row(
             modifier = Modifier
@@ -943,6 +957,26 @@ private fun BatchActionButton(
         )
         Spacer(Modifier.width(4.dp))
         Text(label, fontSize = 12.sp, fontWeight = FontWeight.Bold, color = content, maxLines = 1)
+    }
+}
+
+@Composable
+private fun PresetChip(
+    label: String,
+    tag: String,
+    onApplyPreset: (String) -> Unit,
+    preset: String
+) {
+    PressScale(onClick = { onApplyPreset(preset) }) {
+        Row(
+            modifier = Modifier
+                .clip(RoundedCornerShape(12.dp))
+                .background(VeyroPurple.copy(alpha = 0.16f))
+                .padding(horizontal = 12.dp, vertical = 8.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(label, style = MaterialTheme.typography.labelLarge, color = VeyroPurpleBright)
+        }
     }
 }
 

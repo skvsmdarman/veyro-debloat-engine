@@ -230,6 +230,25 @@ class VeyroViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
+    /**
+     * Curated debloat presets — auto-select engine-flagged packages so users
+     * don't have to hand-pick. Everything still goes through the review dialog.
+     */
+    fun applyPreset(name: String) {
+        val state = _uiState.value
+        val removable = { item: AppItem -> item.isInstalled && !item.isProtected }
+        val selection: Set<String> = when (name) {
+            "safe_clean" ->
+                (state.cpuKillers + state.ramHogs).filter { removable(it) }.map { it.packageName }.toSet()
+            "privacy" ->
+                state.cpuKillers.filter { removable(it) }.map { it.packageName }.toSet()
+            "speed" ->
+                state.ramHogs.filter { removable(it) }.map { it.packageName }.toSet()
+            else -> emptySet()
+        }
+        _uiState.update { it.copy(selectedPackages = selection) }
+    }
+
     fun selectAll(packages: List<AppItem>) {
         _uiState.update { state ->
             state.copy(selectedPackages = packages.filter { !it.isProtected }.map { it.packageName }.toSet())
