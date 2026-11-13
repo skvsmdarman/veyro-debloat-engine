@@ -240,8 +240,9 @@ fun PerformanceModesScreen(
             // 720p FPS Booster
             OverdriveToggle(
                 title = "720p FPS Booster",
-                blurb = "Drops rendering to ~720p (2/3 scale) — 40%+ FPS in heavy 3D games " +
-                    "like Genshin/BGMI/COD. Reset anytime below.",
+                blurb = "Drops rendering to ~720p with density scaled to match — 40%+ FPS in " +
+                    "heavy 3D games. UI stays normal-sized, and the display auto-restores " +
+                    "to native the moment you exit the game.",
                 checked = state.game720p,
                 onChange = onSet720p
             )
@@ -276,6 +277,15 @@ fun PerformanceModesScreen(
                         )
                     }
                 }
+            }
+            if (state.resolution.overridden) {
+                Spacer(Modifier.height(6.dp))
+                Text(
+                    "⚠ Display is downscaled now. It auto-restores when you leave the game — " +
+                        "or tap Reset to native anytime.",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = VeyroAmber
+                )
             }
 
             Spacer(Modifier.height(12.dp))

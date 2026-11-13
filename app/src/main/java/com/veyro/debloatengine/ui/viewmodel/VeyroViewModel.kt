@@ -27,6 +27,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 
 data class VeyroUiState(
@@ -75,6 +76,7 @@ data class VeyroUiState(
     val gameTouchBoost: Boolean = false,
     val resolution: ToolsRepository.ResolutionInfo = ToolsRepository.ResolutionInfo("", ""),
     val customGames: Set<String> = emptySet(),
+    val resolutionBoostActive: Boolean = false,
     // Review-before-run confirmation
     val pendingBatchTargets: List<AppItem> = emptyList(),
     val pendingBatchStrategy: DebloatStrategy = DebloatStrategy.FREEZE,
@@ -391,18 +393,54 @@ class VeyroViewModel(application: Application) : AndroidViewModel(application) {
             // Game Overdrive pre-launch tweaks
             val overdriveLog = mutableListOf<String>()
             val state = _uiState.value
+            var boostedGame: String? = null
             if (state.game720p) {
                 val res = ToolsRepository.readResolution()
                 if (!res.overridden && res.native.isNotBlank()) {
-                    ToolsRepository.downscaleTarget(res.native)?.let { (w, h) ->
-                        val r = ToolsRepository.setResolution(w, h)
-                        overdriveLog += if (r.exitCode == 0) "Resolution downgraded to ${w}x$h (FPS boost)" else "Downscale failed"
+                    val density = ToolsRepository.readDensity()
+                    val r = ToolsRepository.applyScaledDownscale(res.native, density)
+                    if (r.exitCode == 0) {
+                        boostedGame = game
+                        overdriveLog += "Resolution downscaled (density scaled too) - UI stays normal-sized"
+                    } else {
+                        overdriveLog += "Downscale failed: ${r.stderr}"
                     }
                 }
             }
             if (state.gameTouchBoost) {
                 val r = ToolsRepository.setCompetitiveTouch(true)
                 overdriveLog += if (r.exitCode == 0) "Competitive touch latency applied" else "Touch tweak failed"
+            }
+            _uiState.update { it.copy(resolution = ToolsRepository.readResolution()) }
+
+            // Auto-restore: watch the foreground app; when the player leaves
+            // the boosted game, snap resolution + density back to native.
+            if (boostedGame != null) {
+                _uiState.update { it.copy(resolutionBoostActive = true) }
+                val fg = context.getSystemService(Context.ACTIVITY_SERVICE) as android.app.ActivityManager
+                var guard = 0
+                while (guard < 360 && isActive) {
+                    kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
+                        val top = fg.runningAppProcesses
+                            ?.firstOrNull { it.importance == android.app.ActivityManager.RunningAppProcessInfo.IMPORTANCE_FOREGROUND }
+                            ?.processName
+                        if (top != null && !top.startsWith(boostedGame)) {
+                            ToolsRepository.resetResolution()
+                        }
+                    }
+                    if (!_uiState.value.resolutionBoostActive) break
+                    delay(5000)
+                    guard++
+                }
+                if (guard >= 360) ToolsRepository.resetResolution()
+                _uiState.update {
+                    it.copy(
+                        resolutionBoostActive = false,
+                        resolution = ToolsRepository.readResolution(),
+                        modeLog = it.modeLog + "Left the game - display restored to native"
+                    )
+                }
+                return@launch
             }
 
             val log = PerformanceModeManager.apply(

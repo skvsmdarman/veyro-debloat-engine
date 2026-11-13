@@ -177,7 +177,7 @@ object ToolsRepository {
         ShizukuEngine.exec("cmd overlay ${if (enable) "enable" else "disable"} --user 0 $pkg")
 
     // ------------------------------------------------------------------
-    // Resolution downscaler (FPS booster)
+    // Resolution downscaler (FPS booster) — density-aware
     // ------------------------------------------------------------------
     data class ResolutionInfo(val native: String, val current: String) {
         val overridden: Boolean get() = current != native
@@ -190,11 +190,19 @@ object ToolsRepository {
         ResolutionInfo(native, override ?: native)
     }
 
+    /** Current physical density (dpi) from `wm density`, override if present. */
+    suspend fun readDensity(): Int = withContext(Dispatchers.IO) {
+        val out = ShizukuEngine.exec("wm density")
+        val override = Regex("Override density:\\s*(\\d+)").find(out.combined)?.groupValues?.get(1)
+        val physical = Regex("Physical density:\\s*(\\d+)").find(out.combined)?.groupValues?.get(1)
+        override?.toIntOrNull() ?: physical?.toIntOrNull() ?: 420
+    }
+
     suspend fun setResolution(w: Int, h: Int): CommandResult =
         ShizukuEngine.exec("wm size ${w}x$h")
 
     suspend fun resetResolution(): CommandResult =
-        ShizukuEngine.exec("wm size reset")
+        ShizukuEngine.exec("wm size reset && wm density reset")
 
     /** 2/3-scale 720-class resolution for the native aspect ratio. */
     fun downscaleTarget(native: String): Pair<Int, Int>? {
@@ -203,6 +211,23 @@ object ToolsRepository {
         val wi = w.toIntOrNull() ?: return null
         val hi = h.toIntOrNull() ?: return null
         return Pair((wi * 2 / 3) - ((wi * 2 / 3) % 10), (hi * 2 / 3) - ((hi * 2 / 3) % 10))
+    }
+
+    /**
+     * FPS-boost downscale WITH density scaling.
+     *
+     * Changing only `wm size` makes the whole UI render giant (same dp on
+     * fewer px). Scaling density by the same factor keeps every element at
+     * its normal physical size while the GPU renders ~44% fewer pixels —
+     * that's where the FPS actually comes from.
+     */
+    suspend fun applyScaledDownscale(native: String, nativeDensity: Int): CommandResult {
+        val target = downscaleTarget(native) ?: return CommandResult(-1, "", "Could not parse native resolution")
+        val (w, h) = target
+        val nativeW = Regex("(\\d+)x(\\d+)").find(native)?.groupValues?.get(1)?.toIntOrNull()
+            ?: return CommandResult(-1, "", "Could not parse native width")
+        val scaledDensity = (nativeDensity * w / nativeW).coerceAtLeast(120)
+        return ShizukuEngine.exec("wm size ${w}x$h && wm density $scaledDensity")
     }
 
     // ------------------------------------------------------------------

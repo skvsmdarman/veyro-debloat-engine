@@ -1,7 +1,7 @@
 {
-  "versionCode": 4,
-  "versionName": "1.2.0",
-  "releaseNotes": "• NEW: Debloat Presets — one-tap Safe Clean, Privacy Shield & Speed Boost\n• Presets auto-select the right packages, you confirm before anything runs\n• All batch actions state-verified (no more false FAILED results)\n• Reliability: 20s command deadline, no more frozen batches on ColorOS/HyperOS",
-  "downloadUrl": "https://github.com/skvsmdarman/veyro-debloat-engine/releases/download/v1.2.0/veyro-debloat-engine.apk",
-  "mandatory": false
+  "versionCode": 5,
+  "versionName": "1.2.1",
+  "releaseNotes": "• CRITICAL FIX: 720p FPS Booster now scales density with resolution — no more giant UI\n• Display auto-restores to native when you exit a boosted game\n• Clear warning before downscaling\n• Shizuku commands hardened: 20s deadline, no more stuck batches",
+  "downloadUrl": "https://github.com/skvsmdarman/veyro-debloat-engine/releases/download/v1.2.1/veyro-debloat-engine.apk",
+  "mandatory": true
 }
